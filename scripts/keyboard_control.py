@@ -33,8 +33,12 @@ class KeyboardControl(Node):
                   "base_height_command": 0.78, "toggle_policy_action": True}
             m = ByteMultiArray()
             m.data = [bytes([b]) for b in msgpack.packb(pl, use_bin_type=True)]
-            self._pub.publish(m)
-            self.get_logger().info("Control start sent, robot standing")
+            for _ in range(3):
+                self._pub.publish(m)
+                time.sleep(0.1)
+            for _ in range(10):
+                rclpy.spin_once(self, timeout_sec=0.1)
+            self.get_logger().info("Control started, robot standing")
             return
 
         pl = {"navigate_cmd": [self._vx, self._vy, self._vw],
@@ -91,19 +95,17 @@ def main():
     last = 0.0
     t0 = time.time()
 
-    for _ in range(30):
-        rclpy.spin_once(ctrl, timeout_sec=0.1)
-
     try:
         while running and rclpy.ok():
             if select.select([sys.stdin], [], [], 0.01)[0]:
                 running = ctrl.on_key(sys.stdin.read(1))
             now = time.time()
-            interval = 0.05 if time.time() - t0 < 3.0 else 0.1
+            interval = 0.05 if time.time() - t0 < 5.0 else 0.1
             if now - last > interval:
                 ctrl.send_cmd()
                 last = now
-            rclpy.spin_once(ctrl, timeout_sec=0.005)
+            for _ in range(2):
+                rclpy.spin_once(ctrl, timeout_sec=0.025)
     finally:
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old)
         ctrl.destroy_node()
