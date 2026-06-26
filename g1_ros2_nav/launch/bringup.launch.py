@@ -17,13 +17,6 @@ def generate_launch_description():
             DeclareLaunchArgument("use_sim_time", default_value="true"),
             Node(
                 package="g1_ros2_nav",
-                executable="g1_bridge",
-                name="g1_bridge",
-                output="screen",
-                parameters=[{"use_sim_time": use_sim_time}],
-            ),
-            Node(
-                package="g1_ros2_nav",
                 executable="cmd_vel_bridge",
                 name="cmd_vel_bridge",
                 output="screen",
