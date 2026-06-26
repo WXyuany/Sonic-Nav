@@ -60,8 +60,9 @@ class Mid360Sim:
             self._robot_body = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "torso_link")
         except Exception:
             self._robot_body = -1
-        h_beams = 360
-        v_beams = 8
+        # Mid-360: 360° horizontal, ~40° vertical (-20° to +20°), 4 scan lines
+        h_beams = 720
+        v_beams = 16
         self._h_angles = np.linspace(0, 2 * math.pi, h_beams, endpoint=False)
         self._v_angles = np.linspace(-20, 20, v_beams) * math.pi / 180
         self._points = np.zeros((h_beams * v_beams, 3), dtype=np.float32)
@@ -69,34 +70,30 @@ class Mid360Sim:
     def step(self):
         pos = self._data.site_xpos[self._site_id].copy()
         rot = self._data.site_xmat[self._site_id].reshape(3, 3)
-        forward = rot[:, 0]
-        base_angle = math.atan2(forward[1], forward[0])
+        base_angle = math.atan2(rot[1, 0], rot[0, 0])
         idx = 0
         for va in self._v_angles:
-            cos_va = math.cos(va)
-            sin_va = math.sin(va)
+            cos_va, sin_va = math.cos(va), math.sin(va)
             for ha in self._h_angles:
-                world_angle = base_angle + ha
-                direction = np.array([math.cos(world_angle) * cos_va,
-                                      math.sin(world_angle) * cos_va, sin_va])
-                d = self._ray_cast(pos, direction)
-                if d > 0:
-                    self._points[idx] = pos + direction * d
+                wa = base_angle + ha
+                dx = math.cos(wa) * cos_va
+                dy = math.sin(wa) * cos_va
+                dz = sin_va
+                gid = np.array([-1], dtype=np.int32)
+                mujoco.mj_ray(self._model, self._data, pos, (dx, dy, dz),
+                              None, 1, self._robot_body, gid)
+                if gid[0] >= 0:
+                    d = np.linalg.norm(self._data.geom_xpos[gid[0]] - pos)
+                    if d >= self._min_range:
+                        self._points[idx] = [pos[0]+dx*d, pos[1]+dy*d, pos[2]+dz*d]
+                    else:
+                        self._points[idx] = [pos[0]+dx*self._min_range, pos[1]+dy*self._min_range, pos[2]+dz*self._min_range]
                 else:
-                    self._points[idx] = pos + direction * self._max_range
+                    self._points[idx] = [pos[0]+dx*self._max_range, pos[1]+dy*self._max_range, pos[2]+dz*self._max_range]
                 idx += 1
 
-    def _ray_cast(self, origin, direction):
-        geom_id = np.array([-1], dtype=np.int32)
-        mujoco.mj_ray(self._model, self._data, origin, direction, None, 1,
-                      self._robot_body, geom_id)
-        if geom_id[0] >= 0:
-            dist = float(np.linalg.norm(self._data.geom_xpos[geom_id[0]] - origin))
-            return dist if dist >= self._min_range else self._min_range
-        return -1.0
-
     @property
-    def points(self): return self._points.copy()
+    def points(self): return self._points
     @property
     def max_range(self): return self._max_range
     @property
