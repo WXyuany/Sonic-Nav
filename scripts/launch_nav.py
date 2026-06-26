@@ -27,14 +27,19 @@ def start_sim():
         f"export PYTHONPATH='{REPO}:{REPO}/g1_ros2_nav' DISPLAY=:1 && "
         f"exec python {REPO}/gear_sonic/scripts/run_sim_loop.py --no-enable_onscreen"
     )
+    env = os.environ.copy()
+    for k in ["RMW_IMPLEMENTATION", "ROS_DOMAIN_ID", "ROS_LOCALHOST_ONLY",
+              "TensorRT_ROOT", "LD_LIBRARY_PATH"]:
+        env.pop(k, None)
+    env["DISPLAY"] = ":1"
+    env["PYTHONPATH"] = f"{REPO}:{REPO}/g1_ros2_nav"
+    
     proc = subprocess.Popen(["bash", "-c", cmd],
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                            env={"DISPLAY": ":1", "PATH": os.environ["PATH"],
-                                 "HOME": os.environ["HOME"], "USER": os.environ["USER"],
-                                 "PYTHONPATH": f"{REPO}:{REPO}/g1_ros2_nav"})
+                            env=env)
     processes.append(("sim", proc))
     threading.Thread(target=lambda: proc.stdout.read(), daemon=True).start()
-    time.sleep(8)
+    time.sleep(10)
     if proc.poll() is not None:
         out = proc.stdout.read().decode()
         log("SIM", f"CRASHED:\n{out[-400:]}")
