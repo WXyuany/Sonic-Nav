@@ -43,6 +43,10 @@ def pub():
     t.transform.rotation.w = float(qu[0]); t.transform.rotation.x = float(qu[1])
     t.transform.rotation.y = float(qu[2]); t.transform.rotation.z = float(qu[3])
     tf.sendTransform(t)
+    # lidar_link on torso
+    tl = TransformStamped(); tl.header = h; tl.child_frame_id = 'lidar_link'
+    tl.transform.translation.z = 0.30; tl.transform.rotation.w = 1.0
+    tf.sendTransform(tl)
     yaw = math.atan2(2*(qu[0]*qu[3]+qu[1]*qu[2]), 1-2*(qu[2]**2+qu[3]**2))
     o = Odometry(); o.header = h; o.child_frame_id = 'base_link'
     o.pose.pose.position.x = float(p[0]); o.pose.pose.position.y = float(p[1])
