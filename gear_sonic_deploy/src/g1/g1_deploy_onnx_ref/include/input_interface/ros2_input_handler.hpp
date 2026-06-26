@@ -132,7 +132,7 @@ public:
     // ========================================
     // DEBUG CONTROL FLAG
     // ========================================
-    static constexpr bool DEBUG_LOGGING = true;  // Set to false to disable debug logs
+    static constexpr bool DEBUG_LOGGING = false;
 
     // Constructor - initializes ROS2 node and subscribers
     explicit ROS2InputHandler(bool use_ik_mode = true, const std::string& node_name = "g1_input_handler") 
