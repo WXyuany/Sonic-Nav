@@ -61,8 +61,11 @@ class GF(Node):
             self.goal=None; send(" "); self.get_logger().info('Goal reached!'); return
         angle=math.atan2(gy,gx)
         if abs(angle)>0.3:
-            send("e" if angle>0 else "q")  # e=left, q=right
+            send("a" if angle>0 else "d")   # gentle turn
         elif abs(angle)>0.1:
+            send("w")
+            send("d" if angle>0 else "a")   # slight turn while walking
+        else:
             send("w")
 
 rclpy.init()
