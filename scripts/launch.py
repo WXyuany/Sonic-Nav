@@ -21,14 +21,14 @@ def log(tag, msg):
 
 
 def start_sim():
-    log("SIM", "MuJoCo in tmux...")
+    log("SIM", "MuJoCo + ROS2 bridge in tmux...")
     subprocess.run(["tmux", "kill-session", "-t", "sonic-sim"], capture_output=True)
     subprocess.run(["tmux", "new-session", "-d", "-s", "sonic-sim",
         f"export DISPLAY=:1 PYTHONPATH='{REPO}:{REPO}/g1_ros2_nav' && "
         f"source {REPO}/.venv_sim/bin/activate && "
-        f"python {REPO}/gear_sonic/scripts/run_sim_loop.py"], check=True)
-    time.sleep(6)
-    log("SIM", "Running (tmux a -t sonic-sim)")
+        f"python {REPO}/g1_ros2_nav/scripts/run_bridge.py"], check=True)
+    time.sleep(8)
+    log("SIM", "Running (tmux a -t sonic-sim), /odom /scan /tf active")
 
 
 def start_deploy():
