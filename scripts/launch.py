@@ -13,7 +13,7 @@ os.chdir(REPO)
 ENV = os.environ.copy()
 ENV["DISPLAY"] = ENV.get("DISPLAY", ":1")
 ENV["ROS_DOMAIN_ID"] = "42"
-ENV["RMW_IMPLEMENTATION"] = "rmw_cyclonedds_cpp"
+ENV["RMW_IMPLEMENTATION"] = "rmw_fastrtps_cpp"
 ENV["ROS_LOCALHOST_ONLY"] = "1"
 ENV["PYTHONPATH"] = f"{REPO}:{REPO}/g1_ros2_nav:{ENV.get('PYTHONPATH', '')}"
 ENV["TensorRT_ROOT"] = os.path.expanduser("~/TensorRT")
@@ -30,42 +30,30 @@ def start_sim():
     venv = f"source {REPO}/.venv_sim/bin/activate"
     cmd = f"{venv} && exec python {REPO}/gear_sonic/scripts/run_sim_loop.py"
     
-    env_file = "/tmp/sonic_sim_env"
-    with open(env_file, "w") as f:
-        for k, v in ENV.items():
-            f.write(f'{k}="{v}"\n')
+    env = ENV.copy()
+    env["DISPLAY"] = ":1"
+    if "XAUTHORITY" not in env:
+        env["XAUTHORITY"] = os.path.expanduser("~/.Xauthority")
     
-    tmux_cmd = (
-        f"tmux new-session -d -s sonic-sim "
-        f'"source {env_file} && cd {REPO} && {cmd}"'
+    proc = subprocess.Popen(
+        ["bash", "-c", cmd],
+        env=env,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
     )
-    subprocess.run(["bash", "-c", tmux_cmd], check=True)
-    processes.append(("sim", None))
+    processes.append(("sim", proc))
     time.sleep(8)
     
-    result = subprocess.run(
-        ["tmux", "capture-pane", "-t", "sonic-sim", "-p"],
-        capture_output=True, text=True
-    )
-    if "Error" in result.stdout or "Traceback" in result.stdout:
-        log("SIM", f"ERROR:\n{result.stdout[-500:]}")
+    if proc.poll() is not None:
+        log("SIM", f"CRASHED (exit={proc.returncode})")
         sys.exit(1)
-    log("SIM", "Simulator started (tmux session: sonic-sim)")
-
-    try:
-        import subprocess as sp
-        sp.run(["xdotool", "search", "--name", "MuJoCo", "key", "9"],
-               timeout=3, capture_output=True)
-        log("SIM", "Sent '9' to MuJoCo window for ground drop")
-    except Exception:
-        pass
+    log("SIM", "Simulator started")
 
 
 def start_deploy():
     log("DEPLOY", "Starting C++ deployment (ROS2 input)...")
     setup = (
         f"source {REPO}/gear_sonic_deploy/scripts/setup_env.sh > /dev/null 2>&1 && "
-        f"export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp && "
         f"cd {REPO}/gear_sonic_deploy"
     )
     binary = "./target/release/g1_deploy_onnx_ref"
@@ -103,7 +91,7 @@ def start_keepalive():
     ros_setup = "source /opt/ros/humble/setup.bash"
     script = f'''
 import os, rclpy, msgpack, time
-os.environ["RMW_IMPLEMENTATION"] = "rmw_cyclonedds_cpp"
+os.environ["RMW_IMPLEMENTATION"] = "rmw_fastrtps_cpp"
 os.environ["ROS_LOCALHOST_ONLY"] = "1"
 os.environ["ROS_DOMAIN_ID"] = "42"
 
