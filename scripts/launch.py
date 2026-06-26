@@ -22,25 +22,19 @@ def log(tag, msg):
 
 
 def start_sim():
-    log("SIM", "Starting MuJoCo (offscreen)...")
-    cmd = (
+    log("SIM", "Starting MuJoCo...")
+    sim_cmd = (
         f"source {REPO}/.venv_sim/bin/activate && "
-        f"export PYTHONPATH='{REPO}:{REPO}/g1_ros2_nav' && "
-        f"exec python {REPO}/gear_sonic/scripts/run_sim_loop.py "
-        f"--no-enable_onscreen"
+        f"export PYTHONPATH='{REPO}:{REPO}/g1_ros2_nav' DISPLAY=:1 && "
+        f"exec python {REPO}/gear_sonic/scripts/run_sim_loop.py"
     )
-    env = {"DISPLAY": ":1", "PATH": os.environ["PATH"],
-           "HOME": os.environ["HOME"], "USER": os.environ["USER"],
-           "XAUTHORITY": os.environ.get("XAUTHORITY", "")}
-    proc = subprocess.Popen(["bash", "-c", cmd], env=env,
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    processes.append(("sim", proc))
-    time.sleep(5)
-    if proc.poll() is not None:
-        out = proc.stdout.read().decode()
-        log("SIM", f"CRASHED:\n{out[-500:]}")
-        sys.exit(1)
-    log("SIM", "Running")
+    try:
+        subprocess.run(["tmux", "kill-session", "-t", "sonic-sim"], capture_output=True)
+    except Exception:
+        pass
+    subprocess.run(["tmux", "new-session", "-d", "-s", "sonic-sim", sim_cmd], check=True)
+    time.sleep(6)
+    log("SIM", "Running (tmux: sonic-sim, attach: tmux a -t sonic-sim)")
 
 
 def start_deploy():
@@ -86,6 +80,7 @@ def start_bridge():
 
 def cleanup():
     log("STOP", "Shutting down...")
+    subprocess.run(["tmux", "kill-session", "-t", "sonic-sim"], capture_output=True)
     for _, proc in reversed(processes):
         if proc is None:
             continue
