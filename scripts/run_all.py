@@ -40,8 +40,11 @@ print("Init Done!")
 send("]")
 time.sleep(2)
 send("\n")
-time.sleep(6)
-print("Planner should be ON. Ready for goals.")
+time.sleep(8)
+try:
+    while True: os.read(master, 4096)
+except Exception: pass
+print("Ready for goals.")
 
 # ROS2 goal follower
 class GF(Node):
@@ -61,10 +64,8 @@ class GF(Node):
             self.goal=None; send(" "); self.get_logger().info('Goal reached!'); return
         angle=math.atan2(gy,gx)
         if abs(angle)>0.3:
-            send("a" if angle>0 else "d")   # gentle turn
-        elif abs(angle)>0.1:
             send("w")
-            send("d" if angle>0 else "a")   # slight turn while walking
+            if angle>0: send("d")
         else:
             send("w")
 
