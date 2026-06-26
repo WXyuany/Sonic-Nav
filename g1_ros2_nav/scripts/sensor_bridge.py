@@ -82,19 +82,25 @@ class SensorBridge(Node):
 
 
 def main():
-    rclpy.init()
-    bridge = SensorBridge()
-    try:
-        rclpy.spin(bridge)
-    except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
-        pass
-    except Exception as e:
-        print(f"Sensor bridge error: {e}", file=sys.stderr)
-    bridge.destroy_node()
-    try:
-        rclpy.shutdown()
-    except Exception:
-        pass
+    while True:
+        try:
+            rclpy.init()
+            bridge = SensorBridge()
+            rclpy.spin(bridge)
+        except (KeyboardInterrupt, SystemExit):
+            break
+        except Exception as e:
+            print(f"Bridge restarting after: {e}", file=sys.stderr)
+            time.sleep(1)
+        finally:
+            try:
+                bridge.destroy_node()
+            except Exception:
+                pass
+            try:
+                rclpy.shutdown()
+            except Exception:
+                pass
 
 
 if __name__ == "__main__":
