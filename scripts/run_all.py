@@ -1,5 +1,5 @@
 #!/usr/bin/env -S /usr/bin/python3
-import os,sys,pty,math,time,select,subprocess
+import os,sys,pty,math,time,select,subprocess,errno
 import rclpy,msgpack
 os.environ.update({'RMW_IMPLEMENTATION':'rmw_fastrtps_cpp','ROS_LOCALHOST_ONLY':'1','ROS_DOMAIN_ID':'42'})
 from rclpy.node import Node
@@ -40,8 +40,25 @@ print("Init Done!")
 send("]")
 time.sleep(2)
 send("\n")
-time.sleep(2)
-print("Planner enabled, ready for goals")
+time.sleep(5)
+# Verify planner enabled
+read_deploy(1)
+out=b""
+for _ in range(10):
+    try: out+=os.read(master,4096)
+    except Exception: break
+text=out.decode(errors='ignore')
+if "Planner enabled" in text:
+    print("Planner confirmed ON")
+elif "Planner disabled" in text:
+    print("Planner OFF - sending Enter again")
+    send("\n")
+    time.sleep(5)
+else:
+    print("No planner status found, sending Enter again")
+    send("\n")
+    time.sleep(5)
+print("Ready for goals")
 
 # ROS2 goal follower
 class GF(Node):
