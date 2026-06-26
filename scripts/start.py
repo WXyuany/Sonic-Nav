@@ -79,8 +79,8 @@ print("[DEPLOY] Init Done!")
 run_script("sensor_pub.py", "SENSOR")
 time.sleep(3)
 
-# 4. Goal follower
-run_script("goal_follower.py", "NAV")
+# 4. MPPI Navigation
+run_script("mppi_nav.py", "MPPI")
 time.sleep(3)
 
 print()
