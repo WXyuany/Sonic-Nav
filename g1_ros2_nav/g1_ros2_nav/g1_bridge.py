@@ -43,9 +43,8 @@ class G1ROSBridge(Node):
             return
 
         mj_data = self._sim_env.mj_data
-        pelvis_id = self._sim_env.root_body_id
-        pos = mj_data.qpos[pelvis_id * 7 : pelvis_id * 7 + 3].copy()
-        quat = mj_data.qpos[pelvis_id * 7 + 3 : pelvis_id * 7 + 7].copy()
+        pos = mj_data.qpos[0:3].copy()
+        quat = mj_data.qpos[3:7].copy()
 
         now = self.get_clock().now().to_msg()
         header = Header(stamp=now, frame_id="odom")
@@ -79,7 +78,6 @@ class G1ROSBridge(Node):
         if self._sim_env is None or self._sim_env.lidar_sim is None:
             return
 
-        self._sim_env.lidar_step()
         lidar_data = self._sim_env.get_lidar_data()
         if lidar_data is None:
             return

@@ -16,10 +16,10 @@ class CmdVelBridge(Node):
             Twist, "/cmd_vel", self._cmd_vel_callback, 10
         )
         self._goal_pub = self.create_publisher(
-            ByteMultiArray, "/control_goal", 10
+            ByteMultiArray, "ControlPolicy/upper_body_pose", 10
         )
 
-        self.get_logger().info("CmdVel bridge started, pub: /control_goal")
+        self.get_logger().info("CmdVel bridge started → ControlPolicy/upper_body_pose")
 
     def _cmd_vel_callback(self, msg: Twist):
         payload = {
