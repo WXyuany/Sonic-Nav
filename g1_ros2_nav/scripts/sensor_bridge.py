@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S /usr/bin/python3
 import os, sys, math, time, numpy as np, mujoco, rclpy
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
