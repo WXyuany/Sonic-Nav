@@ -19,7 +19,13 @@
   <worldbody>
     <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
     <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
-    <!-- Site -->
     <site name="com_marker" pos="0.1 0 0" size="0.05" rgba="1 0 0 1" type="sphere"/>
+    <!-- Obstacles for lidar testing -->
+    <geom name="obstacle_box" type="box" size="0.3 0.3 0.5" pos="2 0 0.5" rgba="0.8 0.3 0.3 1"/>
+    <geom name="obstacle_cylinder" type="cylinder" size="0.2 0.8" pos="-1.5 1.5 0.8" rgba="0.3 0.3 0.8 1"/>
+    <geom name="wall_left" type="box" size="0.1 5 1.5" pos="3 0 1.5" rgba="0.5 0.5 0.5 1"/>
+    <geom name="wall_right" type="box" size="0.1 5 1.5" pos="-3 0 1.5" rgba="0.5 0.5 0.5 1"/>
+    <geom name="wall_front" type="box" size="5 0.1 1.5" pos="0 3 1.5" rgba="0.5 0.5 0.5 1"/>
+    <geom name="wall_back" type="box" size="5 0.1 1.5" pos="0 -3 1.5" rgba="0.5 0.5 0.5 1"/>
   </worldbody>
 </mujoco>

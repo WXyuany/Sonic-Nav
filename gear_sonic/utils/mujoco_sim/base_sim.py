@@ -26,6 +26,8 @@ from gear_sonic.utils.mujoco_sim.sim_utils import get_subtree_body_names
 from gear_sonic.utils.mujoco_sim.unitree_sdk2py_bridge import ElasticBand, UnitreeSdk2Bridge
 from gear_sonic.utils.mujoco_sim.robot import Robot
 
+from g1_ros2_nav.lidar_sim import LidarSim
+
 GEAR_SONIC_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
 
@@ -70,6 +72,9 @@ class DefaultEnv:
         self.image_dt = self.config.get("IMAGE_DT", 0.033333)
         self.image_publish_process = None
 
+        self.lidar_sim = None
+        self._init_lidar()
+
     def start_image_publish_subprocess(self, start_method: str = "spawn", camera_port: int = 5555):
         from gear_sonic.utils.mujoco_sim.image_publish_utils import ImagePublishProcess
 
@@ -87,6 +92,33 @@ class DefaultEnv:
             verbose=self.config.get("verbose", False),
         )
         self.image_publish_process.start_process()
+
+    def _init_lidar(self):
+        if self.mj_model is None:
+            return
+        try:
+            self.lidar_sim = LidarSim(
+                self.mj_model, self.mj_data,
+                site_name="lidar",
+                num_beams=360,
+                max_range=30.0,
+            )
+        except Exception:
+            self.lidar_sim = None
+
+    def lidar_step(self):
+        if self.lidar_sim:
+            self.lidar_sim.step()
+
+    def get_lidar_data(self):
+        if self.lidar_sim is None:
+            return None
+        return {
+            "ranges": self.lidar_sim.ranges.tolist(),
+            "angles": self.lidar_sim.angles.tolist(),
+            "range_min": self.lidar_sim.min_range,
+            "range_max": self.lidar_sim.max_range,
+        }
 
     def _get_dof_indices_by_class(self):
         with tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".xml") as f:
@@ -623,6 +655,9 @@ class BaseSimulator:
 
                 if sim_cnt % int(self.image_dt / self.sim_dt) == 0:
                     self.sim_env.update_render_caches()
+
+                if sim_cnt % int(0.05 / self.sim_dt) == 0:
+                    self.sim_env.lidar_step()
 
                 # Simple rate limiter (replaces ROS rate)
                 elapsed = time.monotonic() - step_start
