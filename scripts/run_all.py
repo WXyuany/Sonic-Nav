@@ -44,12 +44,12 @@ print("Init Done!")
 # Start control + planner
 send("]")
 time.sleep(2)
-send("\n")
+os.write(master, b'\n')
 time.sleep(8)
 try:
     while True: os.read(master, 4096)
 except Exception: pass
-print("Ready for goals.")
+print("Ready. BTW: enter sent 3 times, planner should be ON.")
 
 # ROS2 goal follower
 class GF(Node):
