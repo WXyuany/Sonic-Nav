@@ -8,14 +8,15 @@ import threading
 import termios
 import tty
 import select
-import msgpack
-import rclpy
-from rclpy.node import Node
-from std_msgs.msg import ByteMultiArray
 
 os.environ.setdefault("ROS_DOMAIN_ID", "42")
 os.environ.setdefault("RMW_IMPLEMENTATION", "rmw_fastrtps_cpp")
 os.environ.setdefault("ROS_LOCALHOST_ONLY", "1")
+
+import msgpack
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import ByteMultiArray
 
 
 class KeyboardController(Node):
@@ -105,10 +106,20 @@ def get_key():
 
 
 def main():
-    old_settings = termios.tcgetattr(sys.stdin)
-    tty.setcbreak(sys.stdin)
+    try:
+        old_settings = termios.tcgetattr(sys.stdin)
+        tty.setcbreak(sys.stdin)
+    except termios.error:
+        print("Error: must run in a terminal", file=sys.stderr)
+        sys.exit(1)
 
-    rclpy.init()
+    try:
+        rclpy.init()
+    except Exception as e:
+        print(f"ROS2 init failed: {e}", file=sys.stderr)
+        print("Make sure: source /opt/ros/humble/setup.bash", file=sys.stderr)
+        sys.exit(1)
+
     ctrl = KeyboardController()
     running = True
     last_send = time.time()

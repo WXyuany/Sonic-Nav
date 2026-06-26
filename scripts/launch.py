@@ -69,6 +69,15 @@ def start_deploy():
         text=True,
     )
     processes.append(("deploy", proc))
+
+    def drain():
+        while True:
+            line = proc.stdout.readline()
+            if not line:
+                break
+            if "Loop timing" not in line:
+                print(f"  [DEPLOY] {line.rstrip()}", flush=True)
+    threading.Thread(target=drain, daemon=True).start()
     return proc
 
 
@@ -176,19 +185,19 @@ def main():
     print("  Sonic-Nav Ready!")
     print("  Robot standing, waiting for /cmd_vel")
     print()
-    print("  Publish navigation goals or cmd_vel:")
-    print("    ros2 topic pub /cmd_vel geometry_msgs/Twist \\")
-    print('    "{linear: {x: 0.3}, angular: {z: 0.0}}"')
-    print()
-    print("  Keyboard control (WASD):")
+    print("  Keyboard control:")
     print("    /usr/bin/python3 scripts/keyboard_control.py")
-    print()
-    print("  Start full navigation:")
-    print("    ros2 launch g1_ros2_nav bringup.launch.py")
+    print("  Or cmd_vel:")
+    print('    ros2 topic pub /cmd_vel geometry_msgs/Twist "{linear: {x: 0.3}}"')
     print("=" * 50)
 
-    deploy_proc.wait()
-    cleanup()
+    try:
+        signal.pause()
+    except AttributeError:
+        while True:
+            time.sleep(1)
+    finally:
+        cleanup()
 
 
 if __name__ == "__main__":
