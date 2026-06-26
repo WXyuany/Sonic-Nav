@@ -129,7 +129,11 @@ class DefaultEnv:
             np.save("/tmp/sonic_qpos.tmp", self.mj_data.qpos.copy())
             os.rename("/tmp/sonic_qpos.tmp", "/tmp/sonic_qpos.npy")
         except Exception as e:
-            pass
+            if not hasattr(self, '_qwarn'):
+                self._qwarn = 0
+            self._qwarn += 1
+            if self._qwarn % 100 == 1:
+                print(f"[WARN] qpos write #{self._qwarn}: {e}", flush=True)
 
     def _get_dof_indices_by_class(self):
         with tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".xml") as f:
