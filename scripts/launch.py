@@ -39,6 +39,14 @@ def start_sim():
     time.sleep(8)
     log("SIM", "Simulator started")
 
+    try:
+        import subprocess as sp
+        sp.run(["xdotool", "search", "--name", "MuJoCo", "key", "9"],
+               timeout=3, capture_output=True)
+        log("SIM", "Sent '9' to MuJoCo window for ground drop")
+    except Exception:
+        pass
+
 
 def start_deploy():
     log("DEPLOY", "Starting C++ deployment (ROS2 input)...")
