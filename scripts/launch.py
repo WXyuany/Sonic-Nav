@@ -6,11 +6,9 @@ os.chdir(REPO)
 
 ENV = os.environ.copy()
 ENV.update({
-    "DISPLAY": os.environ.get("DISPLAY", ":1"),
     "ROS_DOMAIN_ID": "42",
     "RMW_IMPLEMENTATION": "rmw_fastrtps_cpp",
     "ROS_LOCALHOST_ONLY": "1",
-    "PYTHONPATH": f"{REPO}:{REPO}/g1_ros2_nav:{os.environ.get('PYTHONPATH', '')}",
     "TensorRT_ROOT": os.path.expanduser("~/TensorRT"),
 })
 DEPLOY_LOG = "/tmp/sonic_deploy.log"
@@ -22,19 +20,14 @@ def log(tag, msg):
 
 
 def start_sim():
-    log("SIM", "Starting MuJoCo...")
-    sim_cmd = (
+    log("SIM", "MuJoCo in tmux...")
+    subprocess.run(["tmux", "kill-session", "-t", "sonic-sim"], capture_output=True)
+    subprocess.run(["tmux", "new-session", "-d", "-s", "sonic-sim",
+        f"export DISPLAY=:1 PYTHONPATH='{REPO}:{REPO}/g1_ros2_nav' && "
         f"source {REPO}/.venv_sim/bin/activate && "
-        f"export PYTHONPATH='{REPO}:{REPO}/g1_ros2_nav' DISPLAY=:1 && "
-        f"exec python {REPO}/gear_sonic/scripts/run_sim_loop.py"
-    )
-    try:
-        subprocess.run(["tmux", "kill-session", "-t", "sonic-sim"], capture_output=True)
-    except Exception:
-        pass
-    subprocess.run(["tmux", "new-session", "-d", "-s", "sonic-sim", sim_cmd], check=True)
+        f"python {REPO}/gear_sonic/scripts/run_sim_loop.py"], check=True)
     time.sleep(6)
-    log("SIM", "Running (tmux: sonic-sim, attach: tmux a -t sonic-sim)")
+    log("SIM", "Running (tmux a -t sonic-sim)")
 
 
 def start_deploy():
@@ -56,6 +49,46 @@ def start_deploy():
     processes.append(("deploy", proc))
 
 
+def robot_start():
+    log("CTRL", "Sending start command (robot stands)...")
+    script = '''
+import os, rclpy, msgpack, time
+os.environ.update({"RMW_IMPLEMENTATION":"rmw_fastrtps_cpp","ROS_LOCALHOST_ONLY":"1","ROS_DOMAIN_ID":"42"})
+from rclpy.node import Node
+from std_msgs.msg import ByteMultiArray
+rclpy.init()
+n = Node("starter")
+p = n.create_publisher(ByteMultiArray, "ControlPolicy/upper_body_pose", 10)
+time.sleep(3)
+pl = {"navigate_cmd":[0,0,0],"locomotion_mode":0,"base_height_command":0.78,"toggle_policy_action":True}
+m = ByteMultiArray()
+m.data = [bytes([b]) for b in msgpack.packb(pl, use_bin_type=True)]
+p.publish(m)
+time.sleep(2)
+n.destroy_node()
+rclpy.shutdown()
+print("ROBOT_STARTED")
+'''
+    r = subprocess.run(
+        ["bash", "-c", f"source /opt/ros/humble/setup.bash && /usr/bin/python3 -c '{script}'"],
+        env=ENV, capture_output=True, text=True, timeout=30)
+    if "ROBOT_STARTED" in r.stdout:
+        log("CTRL", "Robot standing")
+    else:
+        log("CTRL", f"Start failed: {r.stderr[:200]}")
+
+
+def start_bridge():
+    log("BRIDGE", "cmd_vel bridge...")
+    cmd = (f"source /opt/ros/humble/setup.bash && "
+           f"source ~/ros2_ws/install/setup.bash && "
+           f"exec ros2 run g1_ros2_nav cmd_vel_bridge")
+    proc = subprocess.Popen(["bash", "-c", cmd], env=ENV,
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    processes.append(("bridge", proc))
+    log("BRIDGE", "Running (ControlPolicy ← /cmd_vel)")
+
+
 def wait_for(pattern, timeout=120):
     t0 = time.time()
     while time.time() - t0 < timeout:
@@ -67,28 +100,13 @@ def wait_for(pattern, timeout=120):
     return False
 
 
-def start_bridge():
-    log("BRIDGE", "Starting cmd_vel bridge...")
-    cmd = (f"source /opt/ros/humble/setup.bash && "
-           f"source ~/ros2_ws/install/setup.bash && "
-           f"exec ros2 run g1_ros2_nav cmd_vel_bridge")
-    proc = subprocess.Popen(["bash", "-c", cmd], env=ENV,
-                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    processes.append(("bridge", proc))
-    log("BRIDGE", "Running")
-
-
 def cleanup():
     log("STOP", "Shutting down...")
     subprocess.run(["tmux", "kill-session", "-t", "sonic-sim"], capture_output=True)
     for _, proc in reversed(processes):
-        if proc is None:
-            continue
-        try:
-            proc.terminate()
-            proc.wait(timeout=5)
-        except Exception:
-            proc.kill()
+        if proc is None: continue
+        try: proc.terminate(); proc.wait(timeout=5)
+        except Exception: proc.kill()
     log("STOP", "Done")
 
 
@@ -97,30 +115,33 @@ def main():
     signal.signal(signal.SIGTERM, lambda *_: (cleanup(), sys.exit(0)))
 
     print("=" * 50)
-    print("  Sonic-Nav  |  DOMAIN=42  RMW=fastrtps")
+    print("  Sonic-Nav  |  DOMAIN=42")
     print("=" * 50)
 
     start_sim()
     start_deploy()
 
-    log("WAIT", "Waiting for Init Done (~30s)...")
+    log("WAIT", "Deploy init...")
     if not wait_for("Init Done"):
-        log("ERROR", "Deploy failed to init")
+        log("ERROR", "Deploy init failed")
         cleanup()
         sys.exit(1)
     log("DEPLOY", "Init Done!")
 
+    robot_start()
     start_bridge()
 
     print()
     print("=" * 50)
-    print("  Sonic-Nav Ready!")
+    print("  Sonic-Nav Ready! Robot standing.")
     print()
-    print("  Keyboard (start + walk):")
+    print("  Keyboard (WASD):")
     print("    /usr/bin/python3 scripts/keyboard_control.py")
     print()
-    print("  Keyboard will auto-start control,")
-    print("  then W=forward S=back A/D=strafe Q/E=turn")
+    print("  Or cmd_vel:")
+    print("    ros2 topic pub /cmd_vel geometry_msgs/Twist \\")
+    print('    "{linear: {x: 0.3}}" -r 10')
+    print()
     print("  Ctrl+C to stop all")
     print("=" * 50)
 

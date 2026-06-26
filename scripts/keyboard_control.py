@@ -1,52 +1,36 @@
 #!/usr/bin/env -S /usr/bin/python3 -u
-import os, sys, time, termios, tty, select, msgpack, rclpy
+import os, sys, time, termios, tty, select, rclpy
 from rclpy.node import Node
-from std_msgs.msg import ByteMultiArray
+from geometry_msgs.msg import Twist
 
 os.environ.setdefault("RMW_IMPLEMENTATION", "rmw_fastrtps_cpp")
 os.environ.setdefault("ROS_LOCALHOST_ONLY", "1")
 os.environ.setdefault("ROS_DOMAIN_ID", "42")
 
 
-class KeyboardControl(Node):
+class TeleopTwist(Node):
     def __init__(self):
-        super().__init__("keyboard_control")
-        self._pub = self.create_publisher(ByteMultiArray, "ControlPolicy/upper_body_pose", 10)
+        super().__init__("g1_teleop")
+        self._pub = self.create_publisher(Twist, "/cmd_vel", 10)
         self._vx = 0.0
         self._vy = 0.0
         self._vw = 0.0
         self._speed = 0.3
-        self._started = False
         self._print_help()
 
     def _print_help(self):
         print()
-        print("  Sonic-Nav Keyboard  |  Starting control...")
-        print("  W/S: fwd/back  A/D: strafe  Q/E: turn")
+        print("  G1 Teleop  |  W/S: fwd/back  A/D: strafe  Q/E: turn")
         print("  1/2: speed -/+  SPACE: stop  ESC: quit")
+        print(f"  Speed: {self._speed:.1f} m/s")
         print()
 
-    def send_cmd(self):
-        if not self._started:
-            self._started = True
-            pl = {"navigate_cmd": [0, 0, 0], "locomotion_mode": 0,
-                  "base_height_command": 0.78, "toggle_policy_action": True}
-            m = ByteMultiArray()
-            m.data = [bytes([b]) for b in msgpack.packb(pl, use_bin_type=True)]
-            for _ in range(3):
-                self._pub.publish(m)
-                time.sleep(0.1)
-            for _ in range(10):
-                rclpy.spin_once(self, timeout_sec=0.1)
-            self.get_logger().info("Control started, robot standing")
-            return
-
-        pl = {"navigate_cmd": [self._vx, self._vy, self._vw],
-              "locomotion_mode": 0, "base_height_command": 0.78,
-              "toggle_policy_action": False}
-        m = ByteMultiArray()
-        m.data = [bytes([b]) for b in msgpack.packb(pl, use_bin_type=True)]
-        self._pub.publish(m)
+    def publish(self):
+        msg = Twist()
+        msg.linear.x = self._vx
+        msg.linear.y = self._vy
+        msg.angular.z = self._vw
+        self._pub.publish(msg)
 
     def on_key(self, k):
         if k == "\x1b":
@@ -90,25 +74,22 @@ def main():
         sys.exit(1)
 
     rclpy.init()
-    ctrl = KeyboardControl()
+    teleop = TeleopTwist()
     running = True
-    last = 0.0
-    t0 = time.time()
+    last = time.time()
 
     try:
         while running and rclpy.ok():
-            if select.select([sys.stdin], [], [], 0.01)[0]:
-                running = ctrl.on_key(sys.stdin.read(1))
+            if select.select([sys.stdin], [], [], 0.02)[0]:
+                running = teleop.on_key(sys.stdin.read(1))
             now = time.time()
-            interval = 0.05 if time.time() - t0 < 5.0 else 0.1
-            if now - last > interval:
-                ctrl.send_cmd()
+            if now - last > 0.1:
+                teleop.publish()
                 last = now
-            for _ in range(2):
-                rclpy.spin_once(ctrl, timeout_sec=0.025)
+            rclpy.spin_once(teleop, timeout_sec=0.02)
     finally:
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old)
-        ctrl.destroy_node()
+        teleop.destroy_node()
         rclpy.shutdown()
         print("\nDone")
 
