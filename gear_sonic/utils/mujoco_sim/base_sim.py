@@ -192,6 +192,7 @@ class DefaultEnv:
         xml_path = str(pathlib.Path(GEAR_SONIC_ROOT) / self.config["ROBOT_SCENE"])
         self.mj_model = mujoco.MjModel.from_xml_path(xml_path)
         self.mj_data = mujoco.MjData(self.mj_model)
+        self.mj_data.qpos[2] = 0.793  # pelvis height above ground
         self.mj_model.opt.timestep = self.sim_dt
         self.torso_index = mujoco.mj_name2id(self.mj_model, mujoco.mjtObj.mjOBJ_BODY, "torso_link")
         self.root_body = "pelvis"
