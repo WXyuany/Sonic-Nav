@@ -1,5 +1,5 @@
 #!/usr/bin/env -S /usr/bin/python3
-import os,sys,pty,math,time,select,subprocess,errno
+import os,sys,pty,math,time,select,subprocess,fcntl
 import rclpy,msgpack
 os.environ.update({'RMW_IMPLEMENTATION':'rmw_fastrtps_cpp','ROS_LOCALHOST_ONLY':'1','ROS_DOMAIN_ID':'42'})
 from rclpy.node import Node
@@ -7,6 +7,8 @@ from geometry_msgs.msg import PoseStamped
 
 REPO=os.path.expanduser("~/GR00T-WholeBodyControl")
 master,slave=pty.openpty()
+fl=fcntl.fcntl(master, fcntl.F_GETFL)
+fcntl.fcntl(master, fcntl.F_SETFL, fl | os.O_NONBLOCK)
 env=os.environ.copy()
 env.update({"DISPLAY":":1","ROS_DOMAIN_ID":"42","TensorRT_ROOT":os.path.expanduser("~/TensorRT")})
 cmd=(f"cd {REPO}/gear_sonic_deploy && source scripts/setup_env.sh >/dev/null 2>&1 && "
@@ -32,8 +34,11 @@ def read_deploy(timeout=0):
 # Wait for Init Done
 out=b""
 while b"Init Done" not in out:
-    try: out+=os.read(master,4096)
-    except: time.sleep(0.5)
+    if select.select([master],[],[],0.5)[0]:
+        try: out+=os.read(master,4096)
+        except: pass
+    else:
+        pass
 print("Init Done!")
 
 # Start control + planner
