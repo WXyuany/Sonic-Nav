@@ -78,41 +78,33 @@ def wait_for(pattern, timeout=90):
 
 
 def start_keepalive():
-    log("CTRL", "Starting keepalive (sends start + holds connection)...")
+    log("CTRL", "Sending control start...")
     script = '''
 import os, rclpy, msgpack, time
 os.environ.update({"RMW_IMPLEMENTATION":"rmw_fastrtps_cpp","ROS_LOCALHOST_ONLY":"1","ROS_DOMAIN_ID":"42"})
 from rclpy.node import Node
 from std_msgs.msg import ByteMultiArray
 rclpy.init()
-n = Node("keepalive")
+n = Node("starter")
 p = n.create_publisher(ByteMultiArray, "ControlPolicy/upper_body_pose", 10)
 time.sleep(2)
 pl = {"navigate_cmd":[0,0,0],"locomotion_mode":0,"base_height_command":0.78,"toggle_policy_action":True}
 m = ByteMultiArray()
 m.data = [bytes([b]) for b in msgpack.packb(pl, use_bin_type=True)]
-p.publish(m)
-time.sleep(1)
-pl["toggle_policy_action"] = False
-print("KEEPALIVE_OK")
-while True:
-    m.data = [bytes([b]) for b in msgpack.packb(pl, use_bin_type=True)]
+for _ in range(5):
     p.publish(m)
-    time.sleep(0.08)
+    time.sleep(0.2)
+n.destroy_node()
+rclpy.shutdown()
+print("START_OK")
 '''
-    proc = subprocess.Popen(
+    proc = subprocess.run(
         ["bash", "-c", f"source /opt/ros/humble/setup.bash && /usr/bin/python3 -c '{script}'"],
-        env=ENV, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    processes.append(("keepalive", proc))
-    t0 = time.time()
-    while time.time() - t0 < 20:
-        line = proc.stdout.readline()
-        if "KEEPALIVE_OK" in line:
-            log("CTRL", "Keepalive active")
-            return
-        if not line and proc.poll() is not None:
-            break
-    log("CTRL", "FAILED")
+        env=ENV, capture_output=True, text=True, timeout=20)
+    if "START_OK" in proc.stdout:
+        log("CTRL", "Control started, robot standing")
+    else:
+        log("CTRL", f"Start failed: {proc.stderr[:200]}")
 
 
 def start_bridge():
