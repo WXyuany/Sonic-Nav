@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Sonic-Nav navigation launch. Starts sim+bridge, deploy, ready for nav2."""
-import os, sys, time, signal, subprocess
+import os, sys, time, signal, subprocess, threading
 
 REPO = os.path.expanduser("~/GR00T-WholeBodyControl")
 os.chdir(REPO)
@@ -21,20 +21,22 @@ def log(tag, msg):
 
 
 def start_sim():
-    log("SIM", "MuJoCo in offscreen mode...")
+    log("SIM", "MuJoCo offscreen...")
     cmd = (
         f"source {REPO}/.venv_sim/bin/activate && "
         f"export PYTHONPATH='{REPO}:{REPO}/g1_ros2_nav' DISPLAY=:1 && "
         f"exec python {REPO}/gear_sonic/scripts/run_sim_loop.py --no-enable_onscreen"
     )
     proc = subprocess.Popen(["bash", "-c", cmd],
-                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     processes.append(("sim", proc))
-    time.sleep(6)
+    threading.Thread(target=lambda: proc.stdout.read(), daemon=True).start()
+    time.sleep(8)
     if proc.poll() is not None:
-        log("SIM", "CRASHED")
+        out = proc.stdout.read().decode()
+        log("SIM", f"CRASHED:\n{out[-400:]}")
         sys.exit(1)
-    log("SIM", "Running (offscreen)")
+    log("SIM", "Running")
 
 
 def start_deploy():
@@ -136,9 +138,11 @@ def main():
     start_sim()
     start_deploy()
 
-    log("WAIT", "Deploy init...")
-    if not wait_for("Init Done"):
-        log("ERROR", "Deploy init failed")
+    log("WAIT", "Deploy init (up to 90s)...")
+    if not wait_for("Init Done", 90):
+        with open(DEPLOY_LOG) as f:
+            last = f.read()[-500:]
+        log("ERROR", f"Deploy init failed.\nLast log:\n{last}")
         cleanup()
         sys.exit(1)
     log("DEPLOY", "Init Done!")
