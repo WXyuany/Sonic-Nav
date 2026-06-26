@@ -59,39 +59,32 @@ class GoalFollower(Node):
 
 
 def main():
-    # Start sim in tmux
-    subprocess.run(["tmux","kill-session","-t","sonic-nav"],capture_output=True)
-    subprocess.run(["tmux","new-session","-d","-s","sonic-nav",
-        f"export DISPLAY=:1 PYTHONPATH='{REPO}:{REPO}/g1_ros2_nav' && source {REPO}/.venv_sim/bin/activate && python {REPO}/gear_sonic/scripts/run_sim_loop.py"],check=True)
-    print("[SIM] Started")
-    time.sleep(8)
-
-    # Start deploy in tmux pane 1
-    subprocess.run(["tmux","split-window","-h","-t","sonic-nav"])
-    subprocess.run(["tmux","send-keys","-t","sonic-nav:0.1",
-        f"cd {REPO}/gear_sonic_deploy && source scripts/setup_env.sh >/dev/null 2>&1 && ./target/release/g1_deploy_onnx_ref lo policy/release/model_decoder.onnx reference/example/ --obs-config policy/release/observation_config.yaml --encoder-file policy/release/model_encoder.onnx --planner-file planner/target_vel/V2/planner_sonic.onnx --input-type keyboard --output-type all --zmq-host localhost --disable-crc-check","Enter"],check=True)
-    print("[DEPLOY] Starting...")
-    time.sleep(25)
-
-    # Wait for Init Done
-    for i in range(60):
-        out = subprocess.run(["tmux","capture-pane","-t","sonic-nav:0.1","-p"],capture_output=True,text=True).stdout
-        if "Init Done" in out:
-            print("[DEPLOY] Init Done!")
-            break
-        if "LowState" in out:
-            print("[DEPLOY] Waiting for sim...")
+    # Use existing tmux session if available
+    result = subprocess.run(["tmux","has-session","-t","sonic-nav"],capture_output=True)
+    if result.returncode != 0:
+        # Start fresh
+        subprocess.run(["tmux","new-session","-d","-s","sonic-nav",
+            f"export DISPLAY=:1 PYTHONPATH='{REPO}:{REPO}/g1_ros2_nav' && source {REPO}/.venv_sim/bin/activate && python {REPO}/gear_sonic/scripts/run_sim_loop.py"],check=True)
+        print("[SIM] Started")
+        time.sleep(8)
+        subprocess.run(["tmux","split-window","-h","-t","sonic-nav"])
+        subprocess.run(["tmux","send-keys","-t","sonic-nav:0.1",
+            f"cd {REPO}/gear_sonic_deploy && source scripts/setup_env.sh >/dev/null 2>&1 && ./target/release/g1_deploy_onnx_ref lo policy/release/model_decoder.onnx reference/example/ --obs-config policy/release/observation_config.yaml --encoder-file policy/release/model_encoder.onnx --planner-file planner/target_vel/V2/planner_sonic.onnx --input-type keyboard --output-type all --zmq-host localhost --disable-crc-check","Enter"],check=True)
+        print("[DEPLOY] Starting...")
+        time.sleep(25)
+        for i in range(60):
+            out = subprocess.run(["tmux","capture-pane","-t","sonic-nav:0.1","-p"],capture_output=True,text=True).stdout
+            if "Init Done" in out:
+                print("[DEPLOY] Init Done!")
+                break
+            time.sleep(2)
+        subprocess.run(["tmux","send-keys","-t","sonic-nav:0.1","]"],timeout=5)
         time.sleep(2)
+        subprocess.run(["tmux","send-keys","-t","sonic-nav:0.1","Enter"],timeout=5)
+        time.sleep(2)
+        print("[DEPLOY] Control started, planner enabled")
     else:
-        print("[DEPLOY] Init timeout")
-        return
-
-    # Start control + planner
-    subprocess.run(["tmux","send-keys","-t","sonic-nav:0.1","]"],timeout=5)
-    time.sleep(2)
-    subprocess.run(["tmux","send-keys","-t","sonic-nav:0.1","Enter"],timeout=5)
-    time.sleep(2)
-    print("[DEPLOY] Control started, planner enabled")
+        print("[DEPLOY] Using existing tmux session")
 
     # Start ROS2 goal follower
     rclpy.init()
@@ -103,10 +96,21 @@ def main():
     print("  Ctrl+C to stop")
     print("========================================\n")
 
-    try:
-        rclpy.spin(follower)
-    except KeyboardInterrupt:
-        pass
+    while True:
+        try:
+            rclpy.spin_once(follower, timeout_sec=0.1)
+        except KeyboardInterrupt:
+            break
+        except rclpy.executors.ExternalShutdownException:
+            follower.destroy_node()
+            try: rclpy.shutdown()
+            except: pass
+            rclpy.init()
+            follower = GoalFollower(lambda k: subprocess.run(
+                ["tmux","send-keys","-t","sonic-nav:0.1",k],capture_output=True,timeout=1))
+            time.sleep(1)
+        except Exception:
+            time.sleep(0.5)
     follower.destroy_node()
     rclpy.shutdown()
     subprocess.run(["tmux","kill-session","-t","sonic-nav"])
