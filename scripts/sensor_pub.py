@@ -62,10 +62,11 @@ def pub():
     scan.ranges = [float(r) for r in lidar.ranges]
     scan_pub.publish(scan)
 
+def pub_mid360():
     mid360.step()
     pts = mid360.points
     pc = PointCloud2()
-    pc.header = Header(stamp=now, frame_id='lidar_link')
+    pc.header = Header(stamp=n.get_clock().now().to_msg(), frame_id='lidar_link')
     pc.height = 1; pc.width = len(pts)
     pc.fields = [PointField(name='x', offset=0, datatype=PointField.FLOAT32, count=1),
                  PointField(name='y', offset=4, datatype=PointField.FLOAT32, count=1),
@@ -76,6 +77,7 @@ def pub():
     pc_pub.publish(pc)
 
 n.create_timer(0.05, pub)
+n.create_timer(0.2, pub_mid360)
 print('Sensors: /odom /scan /mid360_points /tf')
 try: rclpy.spin(n)
 except: pass
