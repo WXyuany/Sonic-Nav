@@ -26,7 +26,10 @@ from gear_sonic.utils.mujoco_sim.sim_utils import get_subtree_body_names
 from gear_sonic.utils.mujoco_sim.unitree_sdk2py_bridge import ElasticBand, UnitreeSdk2Bridge
 from gear_sonic.utils.mujoco_sim.robot import Robot
 
-from g1_ros2_nav.lidar_sim import LidarSim
+try:
+    from g1_ros2_nav.lidar_sim import LidarSim
+except ImportError:
+    LidarSim = None
 
 GEAR_SONIC_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
@@ -94,7 +97,7 @@ class DefaultEnv:
         self.image_publish_process.start_process()
 
     def _init_lidar(self):
-        if self.mj_model is None:
+        if self.mj_model is None or LidarSim is None:
             return
         try:
             self.lidar_sim = LidarSim(
