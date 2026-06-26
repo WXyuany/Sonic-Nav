@@ -39,7 +39,7 @@ print("Init Done!")
 # Start control + planner
 send("]")
 time.sleep(2)
-send("\r")
+send("\n")
 time.sleep(6)
 print("Planner should be ON. Ready for goals.")
 
