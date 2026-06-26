@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Sonic-Nav one-click launch. Starts sim, deploy, bridge, and keyboard control."""
-import os, sys, time, signal, subprocess, argparse
+"""Sonic-Nav navigation launch. Starts sim+bridge, deploy, ready for nav2."""
+import os, sys, time, signal, subprocess
 
 REPO = os.path.expanduser("~/GR00T-WholeBodyControl")
 os.chdir(REPO)
@@ -88,15 +88,6 @@ def start_bridge():
     log("BRIDGE", "Running")
 
 
-def start_keyboard():
-    log("KB", "Starting keyboard control...")
-    cmd = (f"source /opt/ros/humble/setup.bash && "
-           f"exec /usr/bin/python3 {REPO}/scripts/keyboard_control.py")
-    proc = subprocess.Popen(["bash", "-c", cmd], env=ENV)
-    processes.append(("keyboard", proc))
-    log("KB", "Use WASD to control, ESC to quit")
-
-
 def wait_for(pattern, timeout=120):
     t0 = time.time()
     while time.time() - t0 < timeout:
@@ -119,15 +110,11 @@ def cleanup():
 
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--no-keyboard", action="store_true", help="Don't start keyboard control")
-    args = ap.parse_args()
-
     signal.signal(signal.SIGINT, lambda *_: (cleanup(), sys.exit(0)))
     signal.signal(signal.SIGTERM, lambda *_: (cleanup(), sys.exit(0)))
 
     print("=" * 50)
-    print("  Sonic-Nav  |  DOMAIN=42")
+    print("  Sonic-Nav Navigation  |  DOMAIN=42")
     print("=" * 50)
 
     start_sim()
@@ -143,17 +130,23 @@ def main():
     robot_start()
     start_bridge()
 
-    if not args.no_keyboard:
-        start_keyboard()
-
     print()
     print("=" * 50)
     print("  Sonic-Nav Ready! Robot standing.")
+    print("  /odom /scan /tf active")
     print()
-    print("  Keyboard: WASD  |  1/2: speed  |  ESC: quit")
-    if args.no_keyboard:
-        print("  Use: ros2 topic pub /cmd_vel ...")
-        print("  Or:  /usr/bin/python3 scripts/keyboard_control.py")
+    print("  Start Navigation + RViz:")
+    print("    source /opt/ros/humble/setup.bash")
+    print("    source ~/ros2_ws/install/setup.bash")
+    print("    ros2 launch g1_ros2_nav bringup.launch.py")
+    print()
+    print("  Set initial pose:")
+    print("    ros2 run nav2_util set_initial_pose -- -x 0 -y 0 -z 0 -yaw 0")
+    print()
+    print("  Send goal:")
+    print('    ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose \\')
+    print('    "{pose: {header: {frame_id: \'map\'}, pose: {position: {x: 2.0, y: 0.0}, orientation: {w: 1.0}}}}"')
+    print()
     print("  Ctrl+C to stop all")
     print("=" * 50)
 
