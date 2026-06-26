@@ -12,11 +12,10 @@ ENV.update({
     "ROS_LOCALHOST_ONLY": "1",
     "PYTHONPATH": f"{REPO}:{REPO}/g1_ros2_nav:{os.environ.get('PYTHONPATH', '')}",
     "TensorRT_ROOT": os.path.expanduser("~/TensorRT"),
-    "XAUTHORITY": os.environ.get("XAUTHORITY", os.path.expanduser("~/.Xauthority")),
 })
-
-processes = []
 DEPLOY_LOG = "/tmp/sonic_deploy.log"
+TMUX_SESSION = "sonic-sim"
+processes = []
 
 
 def log(tag, msg):
@@ -24,29 +23,24 @@ def log(tag, msg):
 
 
 def start_sim():
-    log("SIM", "Starting MuJoCo...")
-    cmd = f"source {REPO}/.venv_sim/bin/activate && exec python {REPO}/gear_sonic/scripts/run_sim_loop.py"
-    env = {
-        "DISPLAY": ":1",
-        "XAUTHORITY": os.environ.get("XAUTHORITY", os.path.expanduser("~/.Xauthority")),
-        "PYTHONPATH": f"{REPO}:{REPO}/g1_ros2_nav",
-        "PATH": os.environ["PATH"],
-        "HOME": os.environ["HOME"],
-        "USER": os.environ["USER"],
-    }
-    proc = subprocess.Popen(["bash", "-c", cmd], env=env,
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    processes.append(("sim", proc))
-    time.sleep(5)
-    if proc.poll() is not None:
-        out = proc.stdout.read().decode()
-        log("SIM", f"CRASHED:\n{out[-600:]}")
+    log("SIM", "Starting MuJoCo in tmux...")
+    subprocess.run(["tmux", "kill-session", "-t", TMUX_SESSION], capture_output=True)
+    subprocess.run(["tmux", "new-session", "-d", "-s", TMUX_SESSION,
+        f"export DISPLAY=:1 PYTHONPATH='{REPO}:{REPO}/g1_ros2_nav' && "
+        f"source {REPO}/.venv_sim/bin/activate && "
+        f"python {REPO}/gear_sonic/scripts/run_sim_loop.py"], check=True)
+    time.sleep(6)
+
+    result = subprocess.run(["tmux", "capture-pane", "-t", TMUX_SESSION, "-p"],
+                            capture_output=True, text=True)
+    if "Traceback" in result.stdout or "Error" in result.stdout:
+        log("SIM", f"ERROR:\n{result.stdout[-500:]}")
         sys.exit(1)
-    log("SIM", "Running")
+    log("SIM", "Running (tmux session: sonic-sim)")
 
 
 def start_deploy():
-    log("DEPLOY", "Starting (TRT loading)...")
+    log("DEPLOY", "Starting...")
     open(DEPLOY_LOG, "w").close()
     cmd = (
         f"source {REPO}/gear_sonic_deploy/scripts/setup_env.sh > /dev/null 2>&1 && "
@@ -62,54 +56,24 @@ def start_deploy():
     proc = subprocess.Popen(["bash", "-c", cmd], env=ENV,
                             stdout=open(DEPLOY_LOG, "w"), stderr=subprocess.STDOUT)
     processes.append(("deploy", proc))
-    return proc
 
 
-def wait_for(pattern, timeout=90):
+def wait_for(pattern, timeout=120):
     t0 = time.time()
     while time.time() - t0 < timeout:
         if os.path.exists(DEPLOY_LOG):
             with open(DEPLOY_LOG) as f:
-                content = f.read()
-            if pattern in content:
-                return True
+                if pattern in f.read():
+                    return True
         time.sleep(0.5)
     return False
 
 
-def start_keepalive():
-    log("CTRL", "Sending control start...")
-    script = '''
-import os, rclpy, msgpack, time
-os.environ.update({"RMW_IMPLEMENTATION":"rmw_fastrtps_cpp","ROS_LOCALHOST_ONLY":"1","ROS_DOMAIN_ID":"42"})
-from rclpy.node import Node
-from std_msgs.msg import ByteMultiArray
-rclpy.init()
-n = Node("starter")
-p = n.create_publisher(ByteMultiArray, "ControlPolicy/upper_body_pose", 10)
-time.sleep(2)
-pl = {"navigate_cmd":[0,0,0],"locomotion_mode":0,"base_height_command":0.78,"toggle_policy_action":True}
-m = ByteMultiArray()
-m.data = [bytes([b]) for b in msgpack.packb(pl, use_bin_type=True)]
-for _ in range(5):
-    p.publish(m)
-    time.sleep(0.2)
-n.destroy_node()
-rclpy.shutdown()
-print("START_OK")
-'''
-    proc = subprocess.run(
-        ["bash", "-c", f"source /opt/ros/humble/setup.bash && /usr/bin/python3 -c '{script}'"],
-        env=ENV, capture_output=True, text=True, timeout=20)
-    if "START_OK" in proc.stdout:
-        log("CTRL", "Control started, robot standing")
-    else:
-        log("CTRL", f"Start failed: {proc.stderr[:200]}")
-
-
 def start_bridge():
     log("BRIDGE", "Starting cmd_vel bridge...")
-    cmd = f"source /opt/ros/humble/setup.bash && source ~/ros2_ws/install/setup.bash && exec ros2 run g1_ros2_nav cmd_vel_bridge"
+    cmd = (f"source /opt/ros/humble/setup.bash && "
+           f"source ~/ros2_ws/install/setup.bash && "
+           f"exec ros2 run g1_ros2_nav cmd_vel_bridge")
     proc = subprocess.Popen(["bash", "-c", cmd], env=ENV,
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     processes.append(("bridge", proc))
@@ -118,7 +82,8 @@ def start_bridge():
 
 def cleanup():
     log("STOP", "Shutting down...")
-    for name, proc in reversed(processes):
+    subprocess.run(["tmux", "kill-session", "-t", TMUX_SESSION], capture_output=True)
+    for _, proc in reversed(processes):
         if proc is None:
             continue
         try:
@@ -126,49 +91,40 @@ def cleanup():
             proc.wait(timeout=5)
         except Exception:
             proc.kill()
-    log("STOP", "All stopped")
-
-
-def tail_log(n=8):
-    if not os.path.exists(DEPLOY_LOG):
-        return
-    with open(DEPLOY_LOG) as f:
-        lines = f.readlines()
-    for line in lines[-n:]:
-        line = line.strip()
-        if line and "Loop timing" not in line and "ROS2 DEBUG" not in line:
-            print(f"  {line}")
+    log("STOP", "Done")
 
 
 def main():
     signal.signal(signal.SIGINT, lambda *_: (cleanup(), sys.exit(0)))
     signal.signal(signal.SIGTERM, lambda *_: (cleanup(), sys.exit(0)))
 
-    print("=" * 45)
+    print("=" * 50)
     print("  Sonic-Nav  |  DOMAIN=42  RMW=fastrtps")
-    print("=" * 45)
+    print("=" * 50)
 
     start_sim()
     start_deploy()
 
-    log("WAIT", "Waiting for deploy Init Done (~30s for TRT load)...")
-    if not wait_for("Init Done", 90):
+    log("WAIT", "Waiting for Init Done (~30s)...")
+    if not wait_for("Init Done"):
         log("ERROR", "Deploy failed to init")
-        tail_log(20)
         cleanup()
         sys.exit(1)
     log("DEPLOY", "Init Done!")
 
     start_bridge()
-    time.sleep(2)
-    start_keepalive()
 
     print()
-    print("=" * 45)
-    print("  Sonic-Nav Ready!  Robot standing.")
-    print("  Keyboard:  /usr/bin/python3 scripts/keyboard_control.py")
-    print("  Ctrl+C to stop")
-    print("=" * 45)
+    print("=" * 50)
+    print("  Sonic-Nav Ready!")
+    print()
+    print("  Keyboard (start + walk):")
+    print("    /usr/bin/python3 scripts/keyboard_control.py")
+    print()
+    print("  Keyboard will auto-start control,")
+    print("  then W=forward S=back A/D=strafe Q/E=turn")
+    print("  Ctrl+C to stop all")
+    print("=" * 50)
 
     try:
         signal.pause()

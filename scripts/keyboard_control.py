@@ -1,139 +1,111 @@
 #!/usr/bin/env -S /usr/bin/python3 -u
-"""Keyboard control for Sonic-Nav robot. WASD to move, Q to quit."""
-
-import os
-import sys
-import time
-import threading
-import termios
-import tty
-import select
-
-os.environ.setdefault("ROS_DOMAIN_ID", "42")
-os.environ.setdefault("RMW_IMPLEMENTATION", "rmw_cyclonedds_cpp")
-os.environ.setdefault("ROS_LOCALHOST_ONLY", "1")
-
-import msgpack
-import rclpy
+import os, sys, time, termios, tty, select, msgpack, rclpy
 from rclpy.node import Node
 from std_msgs.msg import ByteMultiArray
 
+os.environ.setdefault("RMW_IMPLEMENTATION", "rmw_fastrtps_cpp")
+os.environ.setdefault("ROS_LOCALHOST_ONLY", "1")
+os.environ.setdefault("ROS_DOMAIN_ID", "42")
 
-class KeyboardController(Node):
+
+class KeyboardControl(Node):
     def __init__(self):
         super().__init__("keyboard_control")
-        self._pub = self.create_publisher(
-            ByteMultiArray, "ControlPolicy/upper_body_pose", 10
-        )
+        self._pub = self.create_publisher(ByteMultiArray, "ControlPolicy/upper_body_pose", 10)
         self._vx = 0.0
         self._vy = 0.0
         self._vw = 0.0
         self._speed = 0.3
-
-        self.get_logger().info("Keyboard control ready")
+        self._started = False
         self._print_help()
 
     def _print_help(self):
         print()
-        print("  ╔══════════════════════════════╗")
-        print("  ║   Sonic-Nav Keyboard Ctrl   ║")
-        print("  ╠══════════════════════════════╣")
-        print("  ║  W/S    : forward / back    ║")
-        print("  ║  A/D    : left / right      ║")
-        print("  ║  Q/E    : turn left / right ║")
-        print("  ║  1/2    : speed -/+         ║")
-        print("  ║  SPACE  : stop / idle       ║")
-        print("  ║  ESC    : quit              ║")
-        print("  ╚══════════════════════════════╝")
-        print(f"  Speed: {self._speed:.1f} m/s")
+        print("  Sonic-Nav Keyboard  |  Starting control...")
+        print("  W/S: fwd/back  A/D: strafe  Q/E: turn")
+        print("  1/2: speed -/+  SPACE: stop  ESC: quit")
         print()
 
     def send_cmd(self):
-        payload = {
-            "navigate_cmd": [self._vx, self._vy, self._vw],
-            "locomotion_mode": 0,
-            "base_height_command": 0.78,
-            "toggle_policy_action": False,
-        }
+        if not self._started:
+            self._started = True
+            pl = {"navigate_cmd": [0, 0, 0], "locomotion_mode": 0,
+                  "base_height_command": 0.78, "toggle_policy_action": True}
+            m = ByteMultiArray()
+            m.data = [bytes([b]) for b in msgpack.packb(pl, use_bin_type=True)]
+            for _ in range(5):
+                self._pub.publish(m)
+                time.sleep(0.15)
+            self.get_logger().info("Control started, robot standing")
+            return
 
-        packed = msgpack.packb(payload, use_bin_type=True)
-        msg = ByteMultiArray()
-        msg.data = [bytes([b]) for b in packed]
-        self._pub.publish(msg)
+        pl = {"navigate_cmd": [self._vx, self._vy, self._vw],
+              "locomotion_mode": 0, "base_height_command": 0.78,
+              "toggle_policy_action": False}
+        m = ByteMultiArray()
+        m.data = [bytes([b]) for b in msgpack.packb(pl, use_bin_type=True)]
+        self._pub.publish(m)
 
-    def handle_key(self, key):
-        if key == "\x1b":  # ESC
+    def on_key(self, k):
+        if k == "\x1b":
             return False
-        elif key in ("w", "W"):
+        k = k.lower()
+        if k == "w":
             self._vx = self._speed
-        elif key in ("s", "S"):
+            self._vy = self._vw = 0.0
+        elif k == "s":
             self._vx = -self._speed
-        elif key in ("a", "A"):
+            self._vy = self._vw = 0.0
+        elif k == "a":
             self._vy = self._speed
-        elif key in ("d", "D"):
+            self._vx = self._vw = 0.0
+        elif k == "d":
             self._vy = -self._speed
-        elif key in ("q", "Q"):
+            self._vx = self._vw = 0.0
+        elif k == "q":
             self._vw = 0.5
-        elif key in ("e", "E"):
+            self._vx = self._vy = 0.0
+        elif k == "e":
             self._vw = -0.5
-        elif key == "1":
+            self._vx = self._vy = 0.0
+        elif k == " ":
+            self._vx = self._vy = self._vw = 0.0
+        elif k == "1":
             self._speed = max(0.1, self._speed - 0.1)
             print(f"  Speed: {self._speed:.1f}")
-        elif key == "2":
+        elif k == "2":
             self._speed = min(1.5, self._speed + 0.1)
             print(f"  Speed: {self._speed:.1f}")
-        elif key == " ":
-            self._vx = 0.0
-            self._vy = 0.0
-            self._vw = 0.0
-        else:
-            self._vx = 0.0
-            self._vy = 0.0
-            self._vw = 0.0
         return True
-
-
-def get_key():
-    if select.select([sys.stdin], [], [], 0.02)[0]:
-        return sys.stdin.read(1)
-    return None
 
 
 def main():
     try:
-        old_settings = termios.tcgetattr(sys.stdin)
+        old = termios.tcgetattr(sys.stdin)
         tty.setcbreak(sys.stdin)
     except termios.error:
-        print("Error: must run in a terminal", file=sys.stderr)
+        print("Must run in a terminal", file=sys.stderr)
         sys.exit(1)
 
-    try:
-        rclpy.init()
-    except Exception as e:
-        print(f"ROS2 init failed: {e}", file=sys.stderr)
-        print("Make sure: source /opt/ros/humble/setup.bash", file=sys.stderr)
-        sys.exit(1)
-
-    ctrl = KeyboardController()
+    rclpy.init()
+    ctrl = KeyboardControl()
     running = True
-    last_send = time.time()
+    last = 0.0
 
     try:
         while running and rclpy.ok():
-            key = get_key()
-            if key:
-                running = ctrl.handle_key(key)
-
-            if time.time() - last_send > 0.1:
+            if select.select([sys.stdin], [], [], 0.02)[0]:
+                running = ctrl.on_key(sys.stdin.read(1))
+            now = time.time()
+            if now - last > 0.1:
                 ctrl.send_cmd()
-                last_send = time.time()
-
+                last = now
             rclpy.spin_once(ctrl, timeout_sec=0.01)
     finally:
-        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old)
         ctrl.destroy_node()
         rclpy.shutdown()
-        print("\nBye!")
+        print("\nDone")
 
 
 if __name__ == "__main__":
