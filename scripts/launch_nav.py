@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Sonic-Nav navigation launch. Starts sim+bridge, deploy, ready for nav2."""
-import os, sys, time, signal, subprocess, threading
+import os, sys, time, signal, subprocess, threading, shlex
 
 REPO = os.path.expanduser("~/GR00T-WholeBodyControl")
 os.chdir(REPO)
@@ -21,30 +21,14 @@ def log(tag, msg):
 
 
 def start_sim():
-    log("SIM", "MuJoCo offscreen...")
-    cmd = (
+    log("SIM", "MuJoCo in tmux...")
+    subprocess.run(["tmux", "kill-session", "-t", "sonic-sim"], capture_output=True)
+    subprocess.run(["tmux", "new-session", "-d", "-s", "sonic-sim",
+        "export DISPLAY=:1 PYTHONPATH=" + shlex.quote(f"{REPO}:{REPO}/g1_ros2_nav") + " && "
         f"source {REPO}/.venv_sim/bin/activate && "
-        f"export PYTHONPATH='{REPO}:{REPO}/g1_ros2_nav' DISPLAY=:1 && "
-        f"exec python {REPO}/gear_sonic/scripts/run_sim_loop.py --no-enable_onscreen"
-    )
-    env = os.environ.copy()
-    for k in ["RMW_IMPLEMENTATION", "ROS_DOMAIN_ID", "ROS_LOCALHOST_ONLY",
-              "TensorRT_ROOT", "LD_LIBRARY_PATH"]:
-        env.pop(k, None)
-    env["DISPLAY"] = ":1"
-    env["PYTHONPATH"] = f"{REPO}:{REPO}/g1_ros2_nav"
-    
-    proc = subprocess.Popen(["bash", "-c", cmd],
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                            env=env)
-    processes.append(("sim", proc))
-    threading.Thread(target=lambda: proc.stdout.read(), daemon=True).start()
-    time.sleep(10)
-    if proc.poll() is not None:
-        out = proc.stdout.read().decode()
-        log("SIM", f"CRASHED:\n{out[-400:]}")
-        sys.exit(1)
-    log("SIM", "Running")
+        f"python {REPO}/gear_sonic/scripts/run_sim_loop.py"], check=True)
+    time.sleep(8)
+    log("SIM", "Running (tmux a -t sonic-sim)")
 
 
 def start_deploy():
