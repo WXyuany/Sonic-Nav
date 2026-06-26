@@ -29,7 +29,6 @@ class KeyboardController(Node):
         self._vy = 0.0
         self._vw = 0.0
         self._speed = 0.3
-        self._started = False
 
         self.get_logger().info("Keyboard control ready")
         self._print_help()
@@ -43,7 +42,7 @@ class KeyboardController(Node):
         print("  ║  A/D    : left / right      ║")
         print("  ║  Q/E    : turn left / right ║")
         print("  ║  1/2    : speed -/+         ║")
-        print("  ║  SPACE  : start control     ║")
+        print("  ║  SPACE  : stop / idle       ║")
         print("  ║  ESC    : quit              ║")
         print("  ╚══════════════════════════════╝")
         print(f"  Speed: {self._speed:.1f} m/s")
@@ -54,11 +53,8 @@ class KeyboardController(Node):
             "navigate_cmd": [self._vx, self._vy, self._vw],
             "locomotion_mode": 0,
             "base_height_command": 0.78,
-            "toggle_policy_action": not self._started,
+            "toggle_policy_action": False,
         }
-        if not self._started and (self._vx != 0 or self._vy != 0 or self._vw != 0):
-            self._started = True
-            self.get_logger().info("Control started!")
 
         packed = msgpack.packb(payload, use_bin_type=True)
         msg = ByteMultiArray()
@@ -87,11 +83,9 @@ class KeyboardController(Node):
             self._speed = min(1.5, self._speed + 0.1)
             print(f"  Speed: {self._speed:.1f}")
         elif key == " ":
-            self._started = True
             self._vx = 0.0
             self._vy = 0.0
             self._vw = 0.0
-            self.get_logger().info("Starting control...")
         else:
             self._vx = 0.0
             self._vy = 0.0
