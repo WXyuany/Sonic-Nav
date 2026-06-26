@@ -38,14 +38,15 @@ def start_sim():
     proc = subprocess.Popen(
         ["bash", "-c", cmd],
         env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
     )
     processes.append(("sim", proc))
     time.sleep(8)
     
     if proc.poll() is not None:
-        log("SIM", f"CRASHED (exit={proc.returncode})")
+        out = proc.stdout.read().decode()[-500:]
+        log("SIM", f"CRASHED (exit={proc.returncode}):\n{out}")
         sys.exit(1)
     log("SIM", "Simulator started")
 
