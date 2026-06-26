@@ -22,21 +22,25 @@ def log(tag, msg):
 
 
 def start_sim():
-    log("SIM", "Starting MuJoCo (offscreen mode)...")
+    log("SIM", "Starting MuJoCo (offscreen)...")
     cmd = (
         f"source {REPO}/.venv_sim/bin/activate && "
         f"export PYTHONPATH='{REPO}:{REPO}/g1_ros2_nav' && "
         f"exec python {REPO}/gear_sonic/scripts/run_sim_loop.py "
-        f"--enable_onscreen False"
+        f"--no-enable_onscreen"
     )
-    proc = subprocess.Popen(["bash", "-c", cmd],
-                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    env = {"DISPLAY": ":1", "PATH": os.environ["PATH"],
+           "HOME": os.environ["HOME"], "USER": os.environ["USER"],
+           "XAUTHORITY": os.environ.get("XAUTHORITY", "")}
+    proc = subprocess.Popen(["bash", "-c", cmd], env=env,
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     processes.append(("sim", proc))
     time.sleep(5)
     if proc.poll() is not None:
-        log("SIM", f"CRASHED (exit={proc.returncode})")
+        out = proc.stdout.read().decode()
+        log("SIM", f"CRASHED:\n{out[-500:]}")
         sys.exit(1)
-    log("SIM", "Running (offscreen)")
+    log("SIM", "Running")
 
 
 def start_deploy():
