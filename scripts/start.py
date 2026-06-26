@@ -60,20 +60,22 @@ print("=" * 45)
 run(f"source {REPO}/.venv_sim/bin/activate && export PYTHONPATH='{REPO}:{REPO}/g1_ros2_nav' DISPLAY=:1 && exec python {REPO}/gear_sonic/scripts/run_sim_loop.py", "SIM", timeout=120)
 time.sleep(6)
 
-# 2. Deploy
-open("/tmp/sonic_deploy.log", "w").close()
-cmd = (f"source {REPO}/gear_sonic_deploy/scripts/setup_env.sh >/dev/null 2>&1 && cd {REPO}/gear_sonic_deploy && "
-       f"exec ./target/release/g1_deploy_onnx_ref lo policy/release/model_decoder.onnx reference/example/ "
-       f"--obs-config policy/release/observation_config.yaml --encoder-file policy/release/model_encoder.onnx "
-       f"--planner-file planner/target_vel/V2/planner_sonic.onnx --input-type ros2 --output-type all "
-       f"--zmq-host localhost --disable-crc-check")
-run_log = subprocess.Popen(["bash", "-c", cmd], env=ENV, stdout=open("/tmp/sonic_deploy.log", "w"), stderr=subprocess.STDOUT)
-procs.append(run_log)
-print("[DEPLOY] Starting...")
-
-if not wait_deploy_log("Init Done"):
-    print("[DEPLOY] Init timeout"); cleanup(); sys.exit(1)
-print("[DEPLOY] Init Done!")
+# 2. Deploy proxy (keyboard mode + ROS2 → keys)
+rm -f /tmp/proxy_ready
+run = subprocess.Popen(["bash", "-c",
+    f"source /opt/ros/humble/setup.bash && exec /usr/bin/python3 {REPO}/scripts/deploy_proxy.py"],
+    env=ENV, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+procs.append(run)
+print("[PROXY] Starting...")
+t0 = time.time()
+while time.time() - t0 < 120:
+    if os.path.exists("/tmp/proxy_ready"):
+        print("[PROXY] Ready!")
+        break
+    if run.poll() is not None:
+        print(f"[PROXY] CRASHED:\n{run.stdout.read()[-500:]}")
+        cleanup(); sys.exit(1)
+    time.sleep(1)
 
 # 3. Sensor bridge
 run_script("sensor_pub.py", "SENSOR")

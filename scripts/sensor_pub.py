@@ -113,7 +113,7 @@ def pub_camera():
 
 n.create_timer(0.05, pub)
 n.create_timer(0.2, pub_mid360)
-n.create_timer(0.1, pub_camera)
+n.create_timer(0.5, pub_camera)
 print('Sensors: /odom /scan /mid360_points /camera/* /tf')
 try: rclpy.spin(n)
 except: pass
