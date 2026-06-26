@@ -91,6 +91,9 @@ def main():
     last = 0.0
     t0 = time.time()
 
+    for _ in range(30):
+        rclpy.spin_once(ctrl, timeout_sec=0.1)
+
     try:
         while running and rclpy.ok():
             if select.select([sys.stdin], [], [], 0.01)[0]:
