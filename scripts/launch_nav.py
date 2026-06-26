@@ -21,14 +21,20 @@ def log(tag, msg):
 
 
 def start_sim():
-    log("SIM", "MuJoCo + ROS2 bridge in tmux...")
-    subprocess.run(["tmux", "kill-session", "-t", "sonic-sim"], capture_output=True)
-    subprocess.run(["tmux", "new-session", "-d", "-s", "sonic-sim",
-        f"export DISPLAY=:1 PYTHONPATH='{REPO}:{REPO}/g1_ros2_nav' && "
+    log("SIM", "MuJoCo in offscreen mode...")
+    cmd = (
         f"source {REPO}/.venv_sim/bin/activate && "
-        f"python {REPO}/g1_ros2_nav/scripts/run_bridge.py"], check=True)
-    time.sleep(8)
-    log("SIM", "Running (tmux a -t sonic-sim), /odom /scan /tf active")
+        f"export PYTHONPATH='{REPO}:{REPO}/g1_ros2_nav' DISPLAY=:1 && "
+        f"exec python {REPO}/gear_sonic/scripts/run_sim_loop.py --no-enable_onscreen"
+    )
+    proc = subprocess.Popen(["bash", "-c", cmd],
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    processes.append(("sim", proc))
+    time.sleep(6)
+    if proc.poll() is not None:
+        log("SIM", "CRASHED")
+        sys.exit(1)
+    log("SIM", "Running (offscreen)")
 
 
 def start_deploy():
@@ -77,15 +83,25 @@ print("OK")
         log("CTRL", "Robot standing")
 
 
-def start_bridge():
-    log("BRIDGE", "cmd_vel bridge...")
+def start_sensor_bridge():
+    log("SENSOR", "/odom /scan /tf bridge...")
+    cmd = (f"source /opt/ros/humble/setup.bash && "
+           f"exec /usr/bin/python3 {REPO}/g1_ros2_nav/g1_ros2_nav/standalone_bridge.py")
+    proc = subprocess.Popen(["bash", "-c", cmd], env=ENV,
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    processes.append(("sensor", proc))
+    log("SENSOR", "Running")
+
+
+def start_cmdvel_bridge():
+    log("CMDVEL", "cmd_vel → ControlPolicy bridge...")
     cmd = (f"source /opt/ros/humble/setup.bash && "
            f"source ~/ros2_ws/install/setup.bash && "
            f"exec ros2 run g1_ros2_nav cmd_vel_bridge")
     proc = subprocess.Popen(["bash", "-c", cmd], env=ENV,
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    processes.append(("bridge", proc))
-    log("BRIDGE", "Running")
+    processes.append(("cmdvel", proc))
+    log("CMDVEL", "Running")
 
 
 def wait_for(pattern, timeout=120):
@@ -128,7 +144,8 @@ def main():
     log("DEPLOY", "Init Done!")
 
     robot_start()
-    start_bridge()
+    start_sensor_bridge()
+    start_cmdvel_bridge()
 
     print()
     print("=" * 50)

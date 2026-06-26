@@ -124,6 +124,12 @@ class DefaultEnv:
             "range_max": self.lidar_sim.max_range,
         }
 
+    def _write_qpos(self):
+        try:
+            np.save("/tmp/sonic_qpos.npy", self.mj_data.qpos.copy())
+        except Exception:
+            pass
+
     def _get_dof_indices_by_class(self):
         with tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".xml") as f:
             mujoco.mj_saveLastXML(f.name, self.mj_model)
@@ -488,6 +494,8 @@ class DefaultEnv:
         self.mj_data.qvel[0] += vel_world[0]
         self.mj_data.qvel[1] += vel_world[1]
         mujoco.mj_forward(self.mj_model, self.mj_data)
+
+        self._write_qpos()
 
     def update_viewer(self):
         if self.viewer is not None:
