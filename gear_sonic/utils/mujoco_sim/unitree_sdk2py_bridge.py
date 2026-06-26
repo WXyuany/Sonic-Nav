@@ -373,7 +373,7 @@ class ElasticBand:
         self.kd_pos = 1000
         self.kp_ang = 1000
         self.kd_ang = 10
-        self.point = np.array([0, 0, 1])
+        self.point = np.array([0, 0, 0.85])
         self.length = 0
         self.enable = True
 
