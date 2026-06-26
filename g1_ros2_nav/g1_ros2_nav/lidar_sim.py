@@ -45,7 +45,7 @@ class LidarSim:
         mujoco.mj_ray(
             self._model, self._data,
             origin, direction,
-            None, 0, self._robot_body, geom_id,
+            None, 1, self._robot_body, geom_id,
         )
         if geom_id[0] >= 0:
             geom_pos = self._data.geom_xpos[geom_id[0]]

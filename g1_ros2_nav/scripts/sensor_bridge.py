@@ -80,10 +80,15 @@ def main():
     bridge = SensorBridge()
     try:
         rclpy.spin(bridge)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
         pass
+    except Exception as e:
+        print(f"Sensor bridge error: {e}", file=sys.stderr)
     bridge.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.shutdown()
+    except Exception:
+        pass
 
 
 if __name__ == "__main__":

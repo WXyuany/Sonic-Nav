@@ -92,6 +92,7 @@ def main():
     if not wait_for("Init Done"): log("ERROR","Failed");cleanup();sys.exit(1)
     log("DEPLOY","Init Done!")
     robot_start()
+    time.sleep(3)
     start_sensor()
     start_cmdvel()
     print("\n"+"="*50+"\n  Ready! Robot standing. /odom /scan /tf active.\n  ros2 launch g1_ros2_nav bringup.launch.py\n  Ctrl+C to stop\n"+"="*50)
