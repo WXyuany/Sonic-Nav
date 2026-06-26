@@ -36,9 +36,10 @@ class GoalFollower(Node):
                 self.get_logger().info('Goal reached!')
             else:
                 angle = math.atan2(gy,gx)
-                self.last_vx = min(0.5, dist*0.3)
-                self.last_vw = angle * 0.5
-                pl['navigate_cmd'] = [self.last_vx, 0, self.last_vw]
+                if abs(angle) > 0.15:
+                    pl['navigate_cmd'] = [0, 0, angle*0.5]
+                else:
+                    pl['navigate_cmd'] = [min(0.5, dist*0.3), 0, 0]
         m = ByteMultiArray()
         m.data = [bytes([b]) for b in msgpack.packb(pl,use_bin_type=True)]
         self.pub.publish(m)
