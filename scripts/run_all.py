@@ -39,7 +39,7 @@ print("Init Done!")
 # Start control + planner
 send("]")
 time.sleep(2)
-send("\n")
+send("\r")
 time.sleep(5)
 # Verify planner enabled
 read_deploy(1)
@@ -52,11 +52,11 @@ if "Planner enabled" in text:
     print("Planner confirmed ON")
 elif "Planner disabled" in text:
     print("Planner OFF - sending Enter again")
-    send("\n")
+    send("\r")
     time.sleep(5)
 else:
     print("No planner status found, sending Enter again")
-    send("\n")
+    send("\r")
     time.sleep(5)
 print("Ready for goals")
 
