@@ -27,17 +27,30 @@ def log(tag, msg):
 
 def start_sim():
     log("SIM", "Starting MuJoCo simulator...")
-    venv = f"source {REPO}/.venv_sim/bin/activate && "
-    cmd = f"{venv} python {REPO}/gear_sonic/scripts/run_sim_loop.py"
-    proc = subprocess.Popen(
-        ["bash", "-c", cmd],
-        env=ENV,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+    venv = f"source {REPO}/.venv_sim/bin/activate"
+    cmd = f"{venv} && exec python {REPO}/gear_sonic/scripts/run_sim_loop.py"
+    
+    env_file = "/tmp/sonic_sim_env"
+    with open(env_file, "w") as f:
+        for k, v in ENV.items():
+            f.write(f'{k}="{v}"\n')
+    
+    tmux_cmd = (
+        f"tmux new-session -d -s sonic-sim "
+        f'"source {env_file} && cd {REPO} && {cmd}"'
     )
-    processes.append(("sim", proc))
+    subprocess.run(["bash", "-c", tmux_cmd], check=True)
+    processes.append(("sim", None))
     time.sleep(8)
-    log("SIM", "Simulator started")
+    
+    result = subprocess.run(
+        ["tmux", "capture-pane", "-t", "sonic-sim", "-p"],
+        capture_output=True, text=True
+    )
+    if "Error" in result.stdout or "Traceback" in result.stdout:
+        log("SIM", f"ERROR:\n{result.stdout[-500:]}")
+        sys.exit(1)
+    log("SIM", "Simulator started (tmux session: sonic-sim)")
 
     try:
         import subprocess as sp
@@ -133,7 +146,10 @@ print("AUTO_START_OK")
 
 def cleanup():
     log("STOP", "Shutting down...")
+    subprocess.run(["tmux", "kill-session", "-t", "sonic-sim"], capture_output=True)
     for name, proc in reversed(processes):
+        if proc is None:
+            continue
         try:
             proc.terminate()
             proc.wait(timeout=5)
