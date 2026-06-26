@@ -9,8 +9,7 @@ export PYTHONPATH="$REPO_ROOT:$REPO_ROOT/g1_ros2_nav:$PYTHONPATH"
 export DISPLAY="${DISPLAY:-:1}"
 
 echo "[1/2] MuJoCo sim + ROS2 bridge..."
-python "$REPO_ROOT/g1_ros2_nav/scripts/run_bridge.py" \
-    --env-name sim --enable_offscreen False &
+python "$REPO_ROOT/g1_ros2_nav/scripts/run_bridge.py" &
 SIM_PID=$!
 sleep 12
 

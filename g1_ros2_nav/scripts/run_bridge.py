@@ -39,7 +39,7 @@ def main():
 
     sim = SimulatorFactory.create_simulator(
         config=wbc_config,
-        env_name=config.env_name,
+        env_name="default",
         onscreen=wbc_config.get("ENABLE_ONSCREEN", True),
         offscreen=wbc_config.get("ENABLE_OFFSCREEN", False),
         enable_image_publish=config.enable_image_publish,
