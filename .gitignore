@@ -220,3 +220,8 @@ models/
 # Downloaded from HuggingFace (hf download)
 sample_data/
 sonic_release/
+
+# ROS2 colcon build artifacts
+g1_ros2_nav/build/
+g1_ros2_nav/install/
+g1_ros2_nav/log/
