@@ -40,25 +40,8 @@ print("Init Done!")
 send("]")
 time.sleep(2)
 send("\r")
-time.sleep(5)
-# Verify planner enabled
-read_deploy(1)
-out=b""
-for _ in range(10):
-    try: out+=os.read(master,4096)
-    except Exception: break
-text=out.decode(errors='ignore')
-if "Planner enabled" in text:
-    print("Planner confirmed ON")
-elif "Planner disabled" in text:
-    print("Planner OFF - sending Enter again")
-    send("\r")
-    time.sleep(5)
-else:
-    print("No planner status found, sending Enter again")
-    send("\r")
-    time.sleep(5)
-print("Ready for goals")
+time.sleep(6)
+print("Planner should be ON. Ready for goals.")
 
 # ROS2 goal follower
 class GF(Node):
