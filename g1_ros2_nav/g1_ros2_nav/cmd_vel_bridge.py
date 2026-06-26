@@ -35,7 +35,7 @@ class CmdVelBridge(Node):
 
         packed = msgpack.packb(payload, use_bin_type=True)
         out = ByteMultiArray()
-        out.data = list(packed)
+        out.data = [bytes([b]) for b in packed]
         self._goal_pub.publish(out)
 
 

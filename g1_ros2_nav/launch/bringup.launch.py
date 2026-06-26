@@ -1,7 +1,7 @@
 import os
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, TimerAction
-from launch.substitutions import LaunchConfiguration
+from launch.actions import DeclareLaunchArgument, TimerAction, SetEnvironmentVariable
+from launch.substitutions import LaunchConfiguration, EnvironmentVariable
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 
@@ -15,6 +15,9 @@ def generate_launch_description():
     return LaunchDescription(
         [
             DeclareLaunchArgument("use_sim_time", default_value="true"),
+            SetEnvironmentVariable("RMW_IMPLEMENTATION", "rmw_fastrtps_cpp"),
+            SetEnvironmentVariable("ROS_LOCALHOST_ONLY", "1"),
+            SetEnvironmentVariable("ROS_DOMAIN_ID", "42"),
             Node(
                 package="g1_ros2_nav",
                 executable="cmd_vel_bridge",
