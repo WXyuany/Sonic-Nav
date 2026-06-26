@@ -75,14 +75,11 @@ class GF(Node):
         gx,gy=self.goal
         dist=math.hypot(gx,gy)
         if dist<0.3:
-            self.goal=None
-            send(" ")
-            self.get_logger().info('Goal reached!')
-            return
+            self.goal=None; send(" "); self.get_logger().info('Goal reached!'); return
         angle=math.atan2(gy,gx)
-        if abs(angle)>0.15:
-            send("q" if angle>0 else "e")
-        else:
+        if abs(angle)>0.3:
+            send("e" if angle>0 else "q")  # e=left, q=right
+        elif abs(angle)>0.1:
             send("w")
 
 rclpy.init()
