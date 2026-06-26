@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S /usr/bin/python3 -u
 """Keyboard control for Sonic-Nav robot. WASD to move, Q to quit."""
 
 import os

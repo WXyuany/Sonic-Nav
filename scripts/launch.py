@@ -88,33 +88,38 @@ def start_cmd_vel_bridge():
 
 def send_ros2_start():
     log("CTRL", "Sending ROS2 start command...")
-    ros_setup = f"source /opt/ros/humble/setup.bash"
-    script = """
-import rclpy, msgpack, time
+    ros_setup = "source /opt/ros/humble/setup.bash"
+    script = '''
+import os, rclpy, msgpack, time
 from rclpy.node import Node
 from std_msgs.msg import ByteMultiArray
 
+os.environ["RMW_IMPLEMENTATION"] = "rmw_fastrtps_cpp"
+os.environ["ROS_LOCALHOST_ONLY"] = "1"
+os.environ["ROS_DOMAIN_ID"] = "42"
+
 rclpy.init()
-node = Node('auto_starter')
-pub = node.create_publisher(ByteMultiArray, 'ControlPolicy/upper_body_pose', 10)
+node = Node("auto_starter")
+pub = node.create_publisher(ByteMultiArray, "ControlPolicy/upper_body_pose", 10)
 time.sleep(3)
 
-payload = {'navigate_cmd': [0,0,0], 'locomotion_mode': 0,
-           'base_height_command': 0.78, 'toggle_policy_action': True}
+payload = {"navigate_cmd": [0,0,0], "locomotion_mode": 0,
+           "base_height_command": 0.78, "toggle_policy_action": True}
 msg = ByteMultiArray()
 msg.data = [bytes([b]) for b in msgpack.packb(payload, use_bin_type=True)]
 pub.publish(msg)
 time.sleep(2)
 node.destroy_node()
 rclpy.shutdown()
-print('AUTO_START_OK')
-"""
+print("AUTO_START_OK")
+'''
     cmd = f"{ros_setup} && /usr/bin/python3 -c '{script}'"
     result = subprocess.run(["bash", "-c", cmd], env=ENV, capture_output=True, text=True, timeout=30)
     if "AUTO_START_OK" in result.stdout:
         log("CTRL", "Control system started, robot standing by for cmd_vel")
     else:
-        log("CTRL", f"Start command sent (output: {result.stdout.strip()[:100]})")
+        err = result.stderr.strip() or result.stdout.strip()
+        log("CTRL", f"Start failed: {err[:200]}")
 
 
 def cleanup():
@@ -174,6 +179,9 @@ def main():
     print("  Publish navigation goals or cmd_vel:")
     print("    ros2 topic pub /cmd_vel geometry_msgs/Twist \\")
     print('    "{linear: {x: 0.3}, angular: {z: 0.0}}"')
+    print()
+    print("  Keyboard control (WASD):")
+    print("    /usr/bin/python3 scripts/keyboard_control.py")
     print()
     print("  Start full navigation:")
     print("    ros2 launch g1_ros2_nav bringup.launch.py")
