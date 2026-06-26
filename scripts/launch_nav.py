@@ -28,7 +28,10 @@ def start_sim():
         f"exec python {REPO}/gear_sonic/scripts/run_sim_loop.py --no-enable_onscreen"
     )
     proc = subprocess.Popen(["bash", "-c", cmd],
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            env={"DISPLAY": ":1", "PATH": os.environ["PATH"],
+                                 "HOME": os.environ["HOME"], "USER": os.environ["USER"],
+                                 "PYTHONPATH": f"{REPO}:{REPO}/g1_ros2_nav"})
     processes.append(("sim", proc))
     threading.Thread(target=lambda: proc.stdout.read(), daemon=True).start()
     time.sleep(8)
