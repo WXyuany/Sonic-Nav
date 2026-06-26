@@ -1,13 +1,9 @@
-"""MuJoCo-based 2D LiDAR simulation using ray casting."""
-
 import math
 import numpy as np
 import mujoco
 
 
 class LidarSim:
-    """Simulates a 360-degree 2D LiDAR using MuJoCo ray casting."""
-
     def __init__(
         self,
         model: mujoco.MjModel,
@@ -25,17 +21,15 @@ class LidarSim:
         self._min_range = min_range
         self._angles = np.linspace(0, 2 * math.pi, num_beams, endpoint=False)
         self._ranges = np.full(num_beams, max_range, dtype=np.float64)
-
-    @property
-    def site_id(self):
-        return self._site_id
+        try:
+            self._robot_body = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "torso_link")
+        except Exception:
+            self._robot_body = -1
 
     def step(self):
-        """Update lidar ranges by ray casting in MuJoCo."""
         pos = self._data.site_xpos[self._site_id].copy()
         rot = self._data.site_xmat[self._site_id].reshape(3, 3)
         forward = rot[:, 0]
-
         base_angle = math.atan2(forward[1], forward[0])
 
         for i, angle_offset in enumerate(self._angles):
@@ -47,27 +41,16 @@ class LidarSim:
             self._ranges[i] = result if result > 0 else self._max_range
 
     def _ray_cast(self, origin, direction):
-        """Single ray cast. Returns distance or -1 on miss."""
         geom_id = np.array([-1], dtype=np.int32)
-        dist = np.zeros(1, dtype=np.float64)
-
         mujoco.mj_ray(
-            self._model,
-            self._data,
-            origin,
-            direction,
-            None,       # geomgroup: all
-            0,          # flg_static: include static geoms
-            -1,         # bodyexclude
-            geom_id,
+            self._model, self._data,
+            origin, direction,
+            None, 0, self._robot_body, geom_id,
         )
-
         if geom_id[0] >= 0:
             geom_pos = self._data.geom_xpos[geom_id[0]]
-            dist[0] = np.linalg.norm(geom_pos - origin)
-            if dist[0] < self._min_range:
-                return self._min_range
-            return dist[0]
+            dist = float(np.linalg.norm(geom_pos - origin))
+            return dist if dist >= self._min_range else self._min_range
         return -1.0
 
     @property

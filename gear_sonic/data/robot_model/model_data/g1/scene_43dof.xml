@@ -1,8 +1,7 @@
 <mujoco model="g1_43dof scene">
   <include file="g1_29dof_with_hand.xml"/>
-  <!-- Note that the hand model in g1_29dof_with_hand.xml is not stable for simulation. -->
 
-  <statistic center="0 0 0.5" extent="2.0"/>
+  <statistic center="0 0 0.5" extent="8.0"/>
 
   <visual>
     <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
@@ -14,21 +13,31 @@
     <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072"/>
     <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3"
       markrgb="0.8 0.8 0.8" width="300" height="300"/>
-    <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
+    <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="8 8" reflectance="0.2"/>
+    <material name="wall_mat" rgba="0.6 0.6 0.65 1"/>
+    <material name="obstacle_mat" rgba="0.85 0.45 0.25 1"/>
   </asset>
 
   <worldbody>
-    <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
+    <light pos="0 0 6" dir="0 0 -1" directional="true"/>
     <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
-    <!-- Site -->
     <site name="com_marker" pos="0.1 0 0" size="0.05" rgba="1 0 0 1" type="sphere"/>
-    <!-- Navigation obstacles -->
-    <geom name="nav_obs_box" type="box" size="0.3 0.3 0.5" pos="2 0 0.5" rgba="0.8 0.3 0.3 1"/>
-    <geom name="nav_obs_cylinder" type="cylinder" size="0.2 0.8" pos="-1.5 1.5 0.8" rgba="0.3 0.3 0.8 1"/>
-    <geom name="nav_wall_left" type="box" size="0.1 5 1.5" pos="3 0 1.5" rgba="0.5 0.5 0.5 1"/>
-    <geom name="nav_wall_right" type="box" size="0.1 5 1.5" pos="-3 0 1.5" rgba="0.5 0.5 0.5 1"/>
-    <geom name="nav_wall_front" type="box" size="5 0.1 1.5" pos="0 3 1.5" rgba="0.5 0.5 0.5 1"/>
-    <geom name="nav_wall_back" type="box" size="5 0.1 1.5" pos="0 -3 1.5" rgba="0.5 0.5 0.5 1"/>
+
+    <!-- Room walls: 8m x 8m, 2m high -->
+    <geom name="wall_north" type="box" size="4.0 0.05 1.0" pos="0 4.0 1.0" material="wall_mat"/>
+    <geom name="wall_south" type="box" size="4.0 0.05 1.0" pos="0 -4.0 1.0" material="wall_mat"/>
+    <geom name="wall_east"  type="box" size="0.05 4.0 1.0" pos="4.0 0 1.0" material="wall_mat"/>
+    <geom name="wall_west"  type="box" size="0.05 4.0 1.0" pos="-4.0 0 1.0" material="wall_mat"/>
+
+    <!-- Cylindrical obstacles -->
+    <geom name="obs_1" type="cylinder" size="0.25 1.0" pos="1.5 1.0 1.0" material="obstacle_mat"/>
+    <geom name="obs_2" type="cylinder" size="0.20 1.0" pos="-2.0 0.5 1.0" material="obstacle_mat"/>
+    <geom name="obs_3" type="cylinder" size="0.30 1.0" pos="0.5 -2.5 1.0" material="obstacle_mat"/>
+    <geom name="obs_4" type="cylinder" size="0.20 1.0" pos="-1.5 -1.5 1.0" material="obstacle_mat"/>
+    <geom name="obs_5" type="cylinder" size="0.25 1.0" pos="3.0 -1.0 1.0" material="obstacle_mat"/>
+    <geom name="obs_6" type="cylinder" size="0.15 1.0" pos="-3.0 2.5 1.0" material="obstacle_mat"/>
+    <geom name="obs_7" type="cylinder" size="0.22 1.0" pos="2.5 3.0 1.0" material="obstacle_mat"/>
+    <geom name="obs_8" type="cylinder" size="0.18 1.0" pos="-2.5 -3.0 1.0" material="obstacle_mat"/>
   </worldbody>
 
   <default>
