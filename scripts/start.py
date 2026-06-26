@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """One-click Sonic-Nav launch."""
-import os, sys, time, signal, subprocess, threading
+import os, sys, time, signal, subprocess
 
-REPO = os.path.expanduser("~/GR00T-WholeBodyControl")
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.dirname(SCRIPT_DIR)
 os.chdir(REPO)
 ENV = os.environ.copy()
 ENV.update({"RMW_IMPLEMENTATION": "rmw_fastrtps_cpp", "ROS_LOCALHOST_ONLY": "1",
-            "ROS_DOMAIN_ID": "42", "TensorRT_ROOT": os.path.expanduser("~/TensorRT"),
-            "DISPLAY": ":1"})
+            "ROS_DOMAIN_ID": "42", "DISPLAY": ":1"})
 
 procs = []
 
