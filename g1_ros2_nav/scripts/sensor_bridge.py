@@ -33,8 +33,14 @@ class SensorBridge(Node):
         try:
             qpos = np.load("/tmp/sonic_qpos.npy")
             self._data.qpos[:len(qpos)] = qpos
-        except Exception:
+        except Exception as e:
+            if not hasattr(self, '_err_count'):
+                self._err_count = 0
+            self._err_count += 1
+            if self._err_count % 50 == 1:
+                self.get_logger().warn(f"qpos load failed (#{self._err_count}): {e}")
             return
+        self._err_count = 0
         mujoco.mj_forward(self._model, self._data)
         now = self.get_clock().now().to_msg()
         h = Header(stamp=now, frame_id="odom")
