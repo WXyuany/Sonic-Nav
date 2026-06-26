@@ -61,7 +61,8 @@ run(f"source {REPO}/.venv_sim/bin/activate && export PYTHONPATH='{REPO}:{REPO}/g
 time.sleep(6)
 
 # 2. Deploy proxy (keyboard mode + ROS2 → keys)
-rm -f /tmp/proxy_ready
+    try: os.remove("/tmp/proxy_ready")
+    except: pass
 run = subprocess.Popen(["bash", "-c",
     f"source /opt/ros/humble/setup.bash && exec /usr/bin/python3 {REPO}/scripts/deploy_proxy.py"],
     env=ENV, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
