@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
-import os, sys, time, signal, subprocess, threading, math
-import numpy as np
-import rclpy
-from rclpy.node import Node
-from nav_msgs.msg import Odometry
-from sensor_msgs.msg import LaserScan
-from geometry_msgs.msg import TransformStamped, Quaternion
-from tf2_ros import TransformBroadcaster
-from std_msgs.msg import Header
-import mujoco
+import os, sys, time, signal, subprocess, threading
 
 REPO = os.path.expanduser("~/GR00T-WholeBodyControl")
 os.chdir(REPO)
@@ -53,6 +44,23 @@ def robot_start():
         env=ENV,capture_output=True,text=True,timeout=30)
     log("CTRL","Robot standing" if "OK" in r.stdout else f"Failed: {r.stderr[:100]}")
 
+def start_sensor():
+    log("SENSOR","Starting /odom /scan /tf bridge...")
+    proc = subprocess.Popen(["bash","-c",
+        f"source /opt/ros/humble/setup.bash && exec /usr/bin/python3 {REPO}/g1_ros2_nav/scripts/sensor_bridge.py"],
+        env=ENV, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    processes.append(("sensor",proc))
+    time.sleep(3)
+    log("SENSOR","Running")
+
+def start_cmdvel():
+    log("CMDVEL","Bridge...")
+    proc = subprocess.Popen(["bash","-c",
+        "source /opt/ros/humble/setup.bash && source ~/ros2_ws/install/setup.bash && exec ros2 run g1_ros2_nav cmd_vel_bridge"],
+        env=ENV,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+    processes.append(("cmdvel",proc))
+    log("CMDVEL","Running")
+
 def wait_for(p,timeout=120):
     t0=time.time()
     while time.time()-t0<timeout:
@@ -71,60 +79,6 @@ def cleanup():
         except: p.kill()
     log("STOP","Done")
 
-class SensorBridge(Node):
-    def __init__(self):
-        super().__init__("sensor_bridge")
-        from g1_ros2_nav.lidar_sim import LidarSim
-        xml = os.path.join(REPO,"gear_sonic/data/robot_model/model_data/g1/scene_43dof.xml")
-        self._model = mujoco.MjModel.from_xml_path(xml)
-        self._data = mujoco.MjData(self._model)
-        self._lidar = LidarSim(self._model,self._data)
-        self._odom = self.create_publisher(Odometry,"/odom",10)
-        self._scan = self.create_publisher(LaserScan,"/scan",10)
-        self._tf = TransformBroadcaster(self)
-        self._timer = self.create_timer(0.05,self._publish)
-        self.get_logger().info("Sensor bridge started — /odom /scan /tf")
-
-    def _publish(self):
-        try:
-            qpos = np.load("/tmp/sonic_qpos.npy")
-            self._data.qpos[:len(qpos)] = qpos
-        except:
-            return
-        mujoco.mj_forward(self._model,self._data)
-        now = self.get_clock().now().to_msg()
-        h = Header(stamp=now,frame_id="odom")
-        pos = self._data.qpos[0:3].copy()
-        quat = self._data.qpos[3:7].copy()
-        t = TransformStamped()
-        t.header=h; t.child_frame_id="base_link"
-        t.transform.translation.x=float(pos[0]); t.transform.translation.y=float(pos[1]); t.transform.translation.z=float(pos[2])
-        t.transform.rotation.w=float(quat[0]); t.transform.rotation.x=float(quat[1]); t.transform.rotation.y=float(quat[2]); t.transform.rotation.z=float(quat[3])
-        self._tf.sendTransform(t)
-        yaw = math.atan2(2*(quat[0]*quat[3]+quat[1]*quat[2]),1-2*(quat[2]**2+quat[3]**2))
-        odom = Odometry()
-        odom.header=h; odom.child_frame_id="base_link"
-        odom.pose.pose.position.x=float(pos[0]); odom.pose.pose.position.y=float(pos[1])
-        cy=math.cos(yaw/2); sy=math.sin(yaw/2)
-        odom.pose.pose.orientation=Quaternion(w=cy,z=sy)
-        self._odom.publish(odom)
-        self._lidar.step()
-        d = self._lidar
-        scan = LaserScan()
-        scan.header=Header(stamp=now,frame_id="lidar_link")
-        scan.angle_min=0.0; scan.angle_max=2*math.pi-d.angles[1]
-        scan.angle_increment=float(d.angles[1]-d.angles[0])
-        scan.range_min=float(d.min_range); scan.range_max=float(d.max_range)
-        scan.ranges=[float(r) for r in d.ranges]
-        self._scan.publish(scan)
-
-def run_bridge():
-    rclpy.init(args=sys.argv)
-    bridge = SensorBridge()
-    try: rclpy.spin(bridge)
-    except: pass
-    bridge.destroy_node()
-
 def main():
     signal.signal(signal.SIGINT,lambda *_: (cleanup(),sys.exit(0)))
     print("="*50+"\n  Sonic-Nav  |  DOMAIN=42\n"+"="*50)
@@ -134,12 +88,12 @@ def main():
     if not wait_for("Init Done"): log("ERROR","Failed");cleanup();sys.exit(1)
     log("DEPLOY","Init Done!")
     robot_start()
-    threading.Thread(target=run_bridge,daemon=True).start()
-    time.sleep(4)
-    log("BRIDGE","/odom /scan /tf active")
-    print("\n"+"="*50+"\n  Ready! Robot standing.\n  ros2 launch g1_ros2_nav bringup.launch.py\n  Ctrl+C to stop\n"+"="*50)
+    start_sensor()
+    start_cmdvel()
+    print("\n"+"="*50+"\n  Ready! Robot standing. /odom /scan /tf active.\n  ros2 launch g1_ros2_nav bringup.launch.py\n  Ctrl+C to stop\n"+"="*50)
     try: signal.pause()
     except: pass
+    while True: time.sleep(1)
 
 if __name__=="__main__":
     main()
