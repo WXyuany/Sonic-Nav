@@ -25,6 +25,7 @@ setup(
         'console_scripts': [
             'g1_bridge = g1_ros2_nav.g1_bridge:main',
             'cmd_vel_bridge = g1_ros2_nav.cmd_vel_bridge:main',
+            'sensor_bridge = g1_ros2_nav.sensor_bridge:main',
         ],
     },
 )
