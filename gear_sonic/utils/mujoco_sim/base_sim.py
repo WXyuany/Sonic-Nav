@@ -473,6 +473,7 @@ class DefaultEnv:
         mujoco.mj_step(self.mj_model, self.mj_data)
 
         self.check_fall()
+        self._write_qpos()
 
     def apply_perturbation(self, key):
         perturbation_x_body = 0.0
@@ -494,8 +495,6 @@ class DefaultEnv:
         self.mj_data.qvel[0] += vel_world[0]
         self.mj_data.qvel[1] += vel_world[1]
         mujoco.mj_forward(self.mj_model, self.mj_data)
-
-        self._write_qpos()
 
     def update_viewer(self):
         if self.viewer is not None:
