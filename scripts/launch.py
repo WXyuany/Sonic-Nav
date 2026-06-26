@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-import os, sys, time, signal, subprocess
+"""Sonic-Nav one-click launch. Starts sim, deploy, bridge, and keyboard control."""
+import os, sys, time, signal, subprocess, argparse
 
 REPO = os.path.expanduser("~/GR00T-WholeBodyControl")
 os.chdir(REPO)
@@ -50,7 +51,7 @@ def start_deploy():
 
 
 def robot_start():
-    log("CTRL", "Sending start command (robot stands)...")
+    log("CTRL", "Sending start command...")
     script = '''
 import os, rclpy, msgpack, time
 os.environ.update({"RMW_IMPLEMENTATION":"rmw_fastrtps_cpp","ROS_LOCALHOST_ONLY":"1","ROS_DOMAIN_ID":"42"})
@@ -67,15 +68,13 @@ p.publish(m)
 time.sleep(2)
 n.destroy_node()
 rclpy.shutdown()
-print("ROBOT_STARTED")
+print("OK")
 '''
     r = subprocess.run(
         ["bash", "-c", f"source /opt/ros/humble/setup.bash && /usr/bin/python3 -c '{script}'"],
         env=ENV, capture_output=True, text=True, timeout=30)
-    if "ROBOT_STARTED" in r.stdout:
+    if "OK" in r.stdout:
         log("CTRL", "Robot standing")
-    else:
-        log("CTRL", f"Start failed: {r.stderr[:200]}")
 
 
 def start_bridge():
@@ -86,7 +85,16 @@ def start_bridge():
     proc = subprocess.Popen(["bash", "-c", cmd], env=ENV,
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     processes.append(("bridge", proc))
-    log("BRIDGE", "Running (ControlPolicy ← /cmd_vel)")
+    log("BRIDGE", "Running")
+
+
+def start_keyboard():
+    log("KB", "Starting keyboard control...")
+    cmd = (f"source /opt/ros/humble/setup.bash && "
+           f"exec /usr/bin/python3 {REPO}/scripts/keyboard_control.py")
+    proc = subprocess.Popen(["bash", "-c", cmd], env=ENV)
+    processes.append(("keyboard", proc))
+    log("KB", "Use WASD to control, ESC to quit")
 
 
 def wait_for(pattern, timeout=120):
@@ -111,6 +119,10 @@ def cleanup():
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--no-keyboard", action="store_true", help="Don't start keyboard control")
+    args = ap.parse_args()
+
     signal.signal(signal.SIGINT, lambda *_: (cleanup(), sys.exit(0)))
     signal.signal(signal.SIGTERM, lambda *_: (cleanup(), sys.exit(0)))
 
@@ -131,17 +143,17 @@ def main():
     robot_start()
     start_bridge()
 
+    if not args.no_keyboard:
+        start_keyboard()
+
     print()
     print("=" * 50)
     print("  Sonic-Nav Ready! Robot standing.")
     print()
-    print("  Keyboard (WASD):")
-    print("    /usr/bin/python3 scripts/keyboard_control.py")
-    print()
-    print("  Or cmd_vel:")
-    print("    ros2 topic pub /cmd_vel geometry_msgs/Twist \\")
-    print('    "{linear: {x: 0.3}}" -r 10')
-    print()
+    print("  Keyboard: WASD  |  1/2: speed  |  ESC: quit")
+    if args.no_keyboard:
+        print("  Use: ros2 topic pub /cmd_vel ...")
+        print("  Or:  /usr/bin/python3 scripts/keyboard_control.py")
     print("  Ctrl+C to stop all")
     print("=" * 50)
 
