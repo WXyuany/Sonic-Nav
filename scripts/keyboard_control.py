@@ -10,7 +10,7 @@ import tty
 import select
 
 os.environ.setdefault("ROS_DOMAIN_ID", "42")
-os.environ.setdefault("RMW_IMPLEMENTATION", "rmw_fastrtps_cpp")
+os.environ.setdefault("RMW_IMPLEMENTATION", "rmw_cyclonedds_cpp")
 os.environ.setdefault("ROS_LOCALHOST_ONLY", "1")
 
 import msgpack

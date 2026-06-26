@@ -13,7 +13,7 @@ os.chdir(REPO)
 ENV = os.environ.copy()
 ENV["DISPLAY"] = ENV.get("DISPLAY", ":1")
 ENV["ROS_DOMAIN_ID"] = "42"
-ENV["RMW_IMPLEMENTATION"] = "rmw_fastrtps_cpp"
+ENV["RMW_IMPLEMENTATION"] = "rmw_cyclonedds_cpp"
 ENV["ROS_LOCALHOST_ONLY"] = "1"
 ENV["PYTHONPATH"] = f"{REPO}:{REPO}/g1_ros2_nav:{ENV.get('PYTHONPATH', '')}"
 ENV["TensorRT_ROOT"] = os.path.expanduser("~/TensorRT")
@@ -63,7 +63,11 @@ def start_sim():
 
 def start_deploy():
     log("DEPLOY", "Starting C++ deployment (ROS2 input)...")
-    setup = f"source {REPO}/gear_sonic_deploy/scripts/setup_env.sh > /dev/null 2>&1 && cd {REPO}/gear_sonic_deploy"
+    setup = (
+        f"source {REPO}/gear_sonic_deploy/scripts/setup_env.sh > /dev/null 2>&1 && "
+        f"export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp && "
+        f"cd {REPO}/gear_sonic_deploy"
+    )
     binary = "./target/release/g1_deploy_onnx_ref"
     cmd = (
         f"{setup} && exec {binary} lo "
@@ -94,6 +98,57 @@ def start_deploy():
     return proc
 
 
+def start_keepalive():
+    log("CTRL", "Starting keepalive thread (prevents 1s timeout reset)...")
+    ros_setup = "source /opt/ros/humble/setup.bash"
+    script = f'''
+import os, rclpy, msgpack, time
+os.environ["RMW_IMPLEMENTATION"] = "rmw_cyclonedds_cpp"
+os.environ["ROS_LOCALHOST_ONLY"] = "1"
+os.environ["ROS_DOMAIN_ID"] = "42"
+
+from rclpy.node import Node
+from std_msgs.msg import ByteMultiArray
+
+rclpy.init()
+node = Node("keepalive")
+pub = node.create_publisher(ByteMultiArray, "ControlPolicy/upper_body_pose", 10)
+time.sleep(2)
+
+payload = {{"navigate_cmd": [0,0,0], "locomotion_mode": 0,
+           "base_height_command": 0.78, "toggle_policy_action": True}}
+msg = ByteMultiArray()
+msg.data = [bytes([b]) for b in msgpack.packb(payload, use_bin_type=True)]
+pub.publish(msg)
+time.sleep(1)
+
+payload["toggle_policy_action"] = False
+print("KEEPALIVE_STARTED")
+while True:
+    msg.data = [bytes([b]) for b in msgpack.packb(payload, use_bin_type=True)]
+    pub.publish(msg)
+    time.sleep(0.08)
+'''
+    cmd = f"{ros_setup} && /usr/bin/python3 -c '{script}'"
+    proc = subprocess.Popen(
+        ["bash", "-c", cmd],
+        env=ENV,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+    processes.append(("keepalive", proc))
+    start = time.time()
+    while time.time() - start < 15:
+        line = proc.stdout.readline()
+        if "KEEPALIVE_STARTED" in line:
+            log("CTRL", "Keepalive running, robot will stay standing")
+            return
+        if not line and proc.poll() is not None:
+            break
+    log("CTRL", "Keepalive failed to start")
+
+
 def start_cmd_vel_bridge():
     log("BRIDGE", "Starting cmd_vel bridge...")
     ros_setup = f"source /opt/ros/humble/setup.bash && source {REPO}/../ros2_ws/install/setup.bash"
@@ -106,42 +161,6 @@ def start_cmd_vel_bridge():
     )
     processes.append(("bridge", proc))
     log("BRIDGE", "cmd_vel bridge started")
-
-
-def send_ros2_start():
-    log("CTRL", "Sending ROS2 start command...")
-    ros_setup = "source /opt/ros/humble/setup.bash"
-    script = '''
-import os, rclpy, msgpack, time
-from rclpy.node import Node
-from std_msgs.msg import ByteMultiArray
-
-os.environ["RMW_IMPLEMENTATION"] = "rmw_fastrtps_cpp"
-os.environ["ROS_LOCALHOST_ONLY"] = "1"
-os.environ["ROS_DOMAIN_ID"] = "42"
-
-rclpy.init()
-node = Node("auto_starter")
-pub = node.create_publisher(ByteMultiArray, "ControlPolicy/upper_body_pose", 10)
-time.sleep(3)
-
-payload = {"navigate_cmd": [0,0,0], "locomotion_mode": 0,
-           "base_height_command": 0.78, "toggle_policy_action": True}
-msg = ByteMultiArray()
-msg.data = [bytes([b]) for b in msgpack.packb(payload, use_bin_type=True)]
-pub.publish(msg)
-time.sleep(2)
-node.destroy_node()
-rclpy.shutdown()
-print("AUTO_START_OK")
-'''
-    cmd = f"{ros_setup} && /usr/bin/python3 -c '{script}'"
-    result = subprocess.run(["bash", "-c", cmd], env=ENV, capture_output=True, text=True, timeout=30)
-    if "AUTO_START_OK" in result.stdout:
-        log("CTRL", "Control system started, robot standing by for cmd_vel")
-    else:
-        err = result.stderr.strip() or result.stdout.strip()
-        log("CTRL", f"Start failed: {err[:200]}")
 
 
 def cleanup():
@@ -193,8 +212,9 @@ def main():
         sys.exit(1)
 
     start_cmd_vel_bridge()
+    time.sleep(2)
+    start_keepalive()
     time.sleep(3)
-    send_ros2_start()
 
     print()
     print("=" * 50)
