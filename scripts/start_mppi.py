@@ -53,7 +53,7 @@ signal.signal(signal.SIGINT, cleanup)
 signal.signal(signal.SIGTERM, cleanup)
 
 print("=" * 45)
-print("  Sonic-Nav  |  DOMAIN=42")
+print("  Sonic-Nav MPPI |  DOMAIN=42")
 print("=" * 45)
 
 # 1. Sim
@@ -80,7 +80,7 @@ run_script("sensor_pub.py", "SENSOR")
 time.sleep(3)
 
 # 4. Goal follower
-run_script("goal_follower.py", "NAV")
+run_script("mppi_nav.py", "MPPI")
 time.sleep(3)
 
 print()
