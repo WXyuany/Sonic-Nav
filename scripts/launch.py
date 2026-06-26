@@ -14,7 +14,6 @@ ENV.update({
     "TensorRT_ROOT": os.path.expanduser("~/TensorRT"),
 })
 DEPLOY_LOG = "/tmp/sonic_deploy.log"
-TMUX_SESSION = "sonic-sim"
 processes = []
 
 
@@ -23,20 +22,21 @@ def log(tag, msg):
 
 
 def start_sim():
-    log("SIM", "Starting MuJoCo in tmux...")
-    subprocess.run(["tmux", "kill-session", "-t", TMUX_SESSION], capture_output=True)
-    subprocess.run(["tmux", "new-session", "-d", "-s", TMUX_SESSION,
-        f"export DISPLAY=:1 PYTHONPATH='{REPO}:{REPO}/g1_ros2_nav' && "
+    log("SIM", "Starting MuJoCo (offscreen mode)...")
+    cmd = (
         f"source {REPO}/.venv_sim/bin/activate && "
-        f"python {REPO}/gear_sonic/scripts/run_sim_loop.py"], check=True)
-    time.sleep(6)
-
-    result = subprocess.run(["tmux", "capture-pane", "-t", TMUX_SESSION, "-p"],
-                            capture_output=True, text=True)
-    if "Traceback" in result.stdout or "Error" in result.stdout:
-        log("SIM", f"ERROR:\n{result.stdout[-500:]}")
+        f"export PYTHONPATH='{REPO}:{REPO}/g1_ros2_nav' && "
+        f"exec python {REPO}/gear_sonic/scripts/run_sim_loop.py "
+        f"--enable_onscreen False"
+    )
+    proc = subprocess.Popen(["bash", "-c", cmd],
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    processes.append(("sim", proc))
+    time.sleep(5)
+    if proc.poll() is not None:
+        log("SIM", f"CRASHED (exit={proc.returncode})")
         sys.exit(1)
-    log("SIM", "Running (tmux session: sonic-sim)")
+    log("SIM", "Running (offscreen)")
 
 
 def start_deploy():
@@ -82,7 +82,6 @@ def start_bridge():
 
 def cleanup():
     log("STOP", "Shutting down...")
-    subprocess.run(["tmux", "kill-session", "-t", TMUX_SESSION], capture_output=True)
     for _, proc in reversed(processes):
         if proc is None:
             continue
