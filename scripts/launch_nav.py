@@ -47,10 +47,14 @@ def robot_start():
 def start_sensor():
     log("SENSOR","Starting /odom /scan /tf bridge...")
     proc = subprocess.Popen(["bash","-c",
-        f"source /opt/ros/humble/setup.bash && exec /usr/bin/python3 {REPO}/g1_ros2_nav/scripts/sensor_bridge.py"],
-        env=ENV, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        f"source /opt/ros/humble/setup.bash && source {REPO}/.venv_sim/bin/activate && exec python {REPO}/g1_ros2_nav/scripts/sensor_bridge.py"],
+        env=ENV, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
     processes.append(("sensor",proc))
-    time.sleep(3)
+    time.sleep(4)
+    if proc.poll() is not None:
+        err = proc.stderr.read().decode()
+        log("SENSOR",f"CRASHED: {err[-200:]}")
+        return
     log("SENSOR","Running")
 
 def start_cmdvel():
