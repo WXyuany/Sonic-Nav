@@ -127,8 +127,8 @@ class DefaultEnv:
     def _write_qpos(self):
         try:
             np.save("/tmp/sonic_qpos.npy", self.mj_data.qpos.copy())
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[WARN] qpos write failed: {e}", flush=True)
 
     def _get_dof_indices_by_class(self):
         with tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".xml") as f:
