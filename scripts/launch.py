@@ -50,8 +50,8 @@ def start_sim():
 
 def start_deploy():
     log("DEPLOY", "Starting C++ deployment (ROS2 input)...")
-    setup = f"source {REPO}/gear_sonic_deploy/scripts/setup_env.sh > /dev/null 2>&1"
-    binary = f"{REPO}/gear_sonic_deploy/target/release/g1_deploy_onnx_ref"
+    setup = f"source {REPO}/gear_sonic_deploy/scripts/setup_env.sh > /dev/null 2>&1 && cd {REPO}/gear_sonic_deploy"
+    binary = "./target/release/g1_deploy_onnx_ref"
     cmd = (
         f"{setup} && exec {binary} lo "
         f"policy/release/model_decoder.onnx reference/example/ "
