@@ -91,9 +91,8 @@ print("    export ROS_LOCALHOST_ONLY=1")
 print("    export ROS_DOMAIN_ID=42")
 print("    source /opt/ros/humble/setup.bash")
 print("    rviz2")
-    print("  Click 2D Goal Pose to navigate.")
-    print("  For MPPI nav: use scripts/mppi_nav.py instead")
-    print("  Ctrl+C to stop all.")
+print("  Click 2D Goal Pose to navigate.")
+print("  Ctrl+C to stop all.")
 print("=" * 45)
 
 try:
