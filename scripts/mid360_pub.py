@@ -5,6 +5,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))) +
 from g1_ros2_nav.lidar_sim import Mid360Sim
 from rclpy.node import Node
 from sensor_msgs.msg import PointCloud2, PointField
+from geometry_msgs.msg import TransformStamped
+from tf2_ros import TransformBroadcaster
 from std_msgs.msg import Header
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -16,6 +18,7 @@ mid360 = Mid360Sim(model, data)
 rclpy.init()
 n = Node('mid360')
 pc_pub = n.create_publisher(PointCloud2, '/mid360_points', 10)
+tf_bc = TransformBroadcaster(n)
 
 def pub():
     try:
@@ -23,6 +26,14 @@ def pub():
         data.qpos[:len(q)] = q
     except: return
     mujoco.mj_forward(model, data)
+    now = n.get_clock().now().to_msg()
+    # Publish base_link -> lidar_link TF
+    tl = TransformStamped()
+    tl.header = Header(stamp=now, frame_id='base_link')
+    tl.child_frame_id = 'lidar_link'
+    tl.transform.translation.z = 0.30
+    tl.transform.rotation.w = 1.0
+    tf_bc.sendTransform(tl)
     mid360.step()
     pts = mid360.points
     pc = PointCloud2()
