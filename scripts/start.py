@@ -59,6 +59,19 @@ while time.time() - t0 < 120:
     time.sleep(1)
 print("[DEPLOY] Init Done!")
 
+# Auto-start control
+print("[CTRL] Sending start command...")
+subprocess.run(["bash", "-c",
+    "source /opt/ros/humble/setup.bash && /usr/bin/python3 -c '"
+    "import os,rclpy,msgpack,time;os.environ.update({\"RMW_IMPLEMENTATION\":\"rmw_fastrtps_cpp\",\"ROS_LOCALHOST_ONLY\":\"1\",\"ROS_DOMAIN_ID\":\"42\"});"
+    "from rclpy.node import Node;from std_msgs.msg import ByteMultiArray;rclpy.init();n=Node(\"s\");"
+    "p=n.create_publisher(ByteMultiArray,\"ControlPolicy/upper_body_pose\",10);time.sleep(3);"
+    "pl={\"navigate_cmd\":[0,0,0],\"locomotion_mode\":0,\"base_height_command\":0.78,\"toggle_policy_action\":True};"
+    "m=ByteMultiArray();m.data=[bytes([b]) for b in msgpack.packb(pl,use_bin_type=True)];p.publish(m);time.sleep(2);"
+    "n.destroy_node();rclpy.shutdown();print(\"OK\")'"],
+    env=ENV)
+print("[CTRL] Robot should be standing")
+
 # 3. Sensors
 run_script("sensor_pub.py", "SENSOR")
 time.sleep(2)
