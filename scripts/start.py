@@ -60,9 +60,9 @@ print("=" * 45)
 run(f"source {REPO}/.venv_sim/bin/activate && export PYTHONPATH='{REPO}:{REPO}/g1_ros2_nav' DISPLAY=:1 && exec python {REPO}/gear_sonic/scripts/run_sim_loop.py", "SIM", timeout=120)
 time.sleep(6)
 
-# 2. Deploy proxy (keyboard mode + ROS2 → keys)
-    try: os.remove("/tmp/proxy_ready")
-    except: pass
+# 2. Deploy proxy (keyboard mode + ROS2 -> keys)
+try: os.remove("/tmp/proxy_ready")
+except: pass
 run = subprocess.Popen(["bash", "-c",
     f"source /opt/ros/humble/setup.bash && exec /usr/bin/python3 {REPO}/scripts/deploy_proxy.py"],
     env=ENV, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
