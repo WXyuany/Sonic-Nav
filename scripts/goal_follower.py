@@ -28,7 +28,7 @@ class GoalFollower(Node):
         self.ryaw=math.atan2(2*(q.w*q.z),1-2*q.z*q.z)
 
     def tick(self):
-        pl={'toggle_policy_action':False,'locomotion_mode':0,'base_height_command':0.78,'navigate_cmd':[0,0,0]}
+        pl={'toggle_policy_action':False,'locomotion_mode':1,'base_height_command':0.78,'navigate_cmd':[0,0,0]}
         if self.goal is None: pass
         else:
             dx=self.goal[0]-self.rx;dy=self.goal[1]-self.ry
@@ -42,7 +42,7 @@ class GoalFollower(Node):
                 if abs(err) > 0.08:
                     pl['navigate_cmd'] = [0, 0, turn]
                 else:
-                    pl['navigate_cmd'] = [min(0.8, dist*0.5), 0, turn*0.3]
+                    pl['navigate_cmd'] = [min(1.2, dist*0.5), 0, turn*0.3]
         m=ByteMultiArray();m.data=[bytes([b]) for b in msgpack.packb(pl,use_bin_type=True)]
         self.pub.publish(m)
 
