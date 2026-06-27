@@ -27,6 +27,21 @@ Click **2D Goal Pose** in RViz to navigate. Ctrl+C to stop.
 | MPPI Nav | `start_mppi.py` | GPU trajectory sampling + collision avoidance |
 | Keyboard | `keyboard_control.py` | WASD manual control |
 
+## Scenes
+
+```bash
+bash scripts/switch_scene.sh <name>
+```
+
+| Scene | Description |
+|-------|-------------|
+| `default` | 8m×8m room, cylinder obstacles |
+| `dynamic` | Moving obstacles (sliding + rotating) |
+| `stairs` | 10-step staircase + ramp |
+| `uneven` | Bumpy terrain + rocks |
+
+Restart sim after switching.
+
 ## Installation
 
 ```bash
