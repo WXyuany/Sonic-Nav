@@ -15,7 +15,13 @@ model = mujoco.MjModel.from_xml_path(xml)
 data = mujoco.MjData(model)
 mid360 = Mid360Sim(model, data)
 cam_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_CAMERA, 'head_camera')
-renderer = mujoco.Renderer(model, 640, 480)
+renderer = None
+
+def _get_renderer():
+    global renderer
+    if renderer is None:
+        renderer = mujoco.Renderer(model, 640, 480)
+    return renderer
 
 rclpy.init()
 n = Node('mid360')
@@ -53,8 +59,12 @@ def pub_pointcloud():
     pc_pub.publish(pc)
 
 def pub_camera():
-    renderer.update_scene(data, camera=cam_id)
-    rgb = renderer.render()
+    try:
+        r = _get_renderer()
+        r.update_scene(data, camera=cam_id)
+        rgb = r.render()
+    except Exception as e:
+        return
     now = n.get_clock().now().to_msg()
     nc = Header(stamp=now, frame_id='base_link')
     nc.child_frame_id = 'head_camera'
@@ -69,9 +79,9 @@ def pub_camera():
     rgb_msg.data = rgb.tobytes()
     rgb_pub.publish(rgb_msg)
 
-    renderer.enable_depth_rendering()
-    depth = renderer.render()
-    renderer.disable_depth_rendering()
+    r.enable_depth_rendering()
+    depth = r.render()
+    r.disable_depth_rendering()
     depth_msg = Image()
     depth_msg.header = Header(stamp=now, frame_id='head_camera')
     depth_msg.height = 480; depth_msg.width = 640
