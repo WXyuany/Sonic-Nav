@@ -81,6 +81,10 @@ while time.time() - t0 < 120:
 run_script("sensor_pub.py", "SENSOR")
 time.sleep(3)
 
+# 3b. Mid360 point cloud
+run_script("mid360_pub.py", "MID360")
+time.sleep(2)
+
 # 4. Goal follower
 run_script("goal_follower.py", "NAV")
 time.sleep(3)
