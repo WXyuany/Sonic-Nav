@@ -47,7 +47,7 @@ def pub():
     pc.data = pts.tobytes()
     pc_pub.publish(pc)
 
-n.create_timer(0.3, pub)
+n.create_timer(0.1, pub)
 print('Mid360: /mid360_points')
 try: rclpy.spin(n)
 except: pass

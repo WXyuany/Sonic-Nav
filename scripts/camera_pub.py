@@ -78,7 +78,7 @@ def pub():
     ci.k = [fx, 0.0, W/2, 0.0, fx, H/2, 0.0, 0.0, 1.0]
     ci_pub.publish(ci)
 
-n.create_timer(0.5, pub)
+n.create_timer(0.2, pub)
 print('Camera: /camera/color /camera/depth')
 try: rclpy.spin(n)
 except: pass
