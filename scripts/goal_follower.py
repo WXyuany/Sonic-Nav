@@ -39,10 +39,8 @@ class GoalFollower(Node):
                 err=target-self.ryaw
                 err=math.atan2(math.sin(err),math.cos(err))
                 turn = max(-0.5, min(0.5, err * 1.0))
-                if abs(err) > 0.08:
-                    pl['navigate_cmd'] = [0, 0, turn]
-                else:
-                    pl['navigate_cmd'] = [min(1.2, dist*0.5), 0, turn*0.3]
+                fwd = max(0.0, min(0.8, dist*0.5 - abs(err)*0.5))
+                pl['navigate_cmd'] = [fwd, 0, turn]
         m=ByteMultiArray();m.data=[bytes([b]) for b in msgpack.packb(pl,use_bin_type=True)]
         self.pub.publish(m)
 
