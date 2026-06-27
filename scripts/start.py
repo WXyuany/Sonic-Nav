@@ -63,8 +63,6 @@ print("[DEPLOY] Init Done!")
 run_script("sensor_pub.py", "SENSOR")
 time.sleep(2)
 run_script("mid360_pub.py", "MID360")
-time.sleep(2)
-run_script("camera_pub.py", "CAM")
 
 # 4. Navigation
 run_script("goal_follower.py", "NAV")
