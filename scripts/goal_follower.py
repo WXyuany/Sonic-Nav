@@ -42,7 +42,7 @@ class GoalFollower(Node):
                 if abs(err) > 0.08:
                     pl['navigate_cmd'] = [0, 0, turn]
                 else:
-                    pl['navigate_cmd'] = [min(0.5, dist*0.3), 0, turn*0.3]
+                    pl['navigate_cmd'] = [min(0.8, dist*0.5), 0, turn*0.3]
         m=ByteMultiArray();m.data=[bytes([b]) for b in msgpack.packb(pl,use_bin_type=True)]
         self.pub.publish(m)
 
