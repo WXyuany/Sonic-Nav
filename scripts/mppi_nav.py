@@ -66,11 +66,15 @@ class MPPINav(Node):
             all_s.append(traj.clone())
 
         costs = torch.zeros(N_SAMPLES, device=DEV)
+        target_yaw = math.atan2(dy, dx)
         for t in range(HORIZON):
             s = all_s[t]
             ex = s[:, 0]-self.goal[0]; ey = s[:, 1]-self.goal[1]
-            costs += 4.0 * (ex*ex + ey*ey)
-            if t > 0: costs += 0.05 * ((noise[:, t]-noise[:, t-1])**2).sum(dim=1)
+            costs += 3.0 * (ex*ex + ey*ey)
+            yaw_err = target_yaw - s[:, 2]
+            yaw_err = torch.atan2(torch.sin(yaw_err), torch.cos(yaw_err))
+            costs += 1.0 * yaw_err.abs()
+            if t > 0: costs += 0.1 * ((noise[:, t]-noise[:, t-1])**2).sum(dim=1)
 
         if len(self.pts) > 0:
             op = torch.from_numpy(self.pts).to(DEV)
@@ -82,7 +86,8 @@ class MPPINav(Node):
         w = torch.exp(-(costs - costs.min()) / LAMBDA)
         w /= w.sum() + 1e-8
         u_opt = (w.unsqueeze(1) * noise[:, 0, :]).sum(dim=0)
-        u_opt[0] = u_opt[0].clamp(-1.0, 1.0); u_opt[1] = u_opt[1].clamp(-1.0, 1.0)
+        u_opt[0] = u_opt[0].clamp(-1.0, 1.0); u_opt[1] = u_opt[1].clamp(-0.8, 0.8)
+        u_opt = 0.5 * self._u.squeeze(0) + 0.5 * u_opt
         self._u = u_opt.unsqueeze(0)
 
         pl['navigate_cmd'] = [u_opt[0].item(), 0, u_opt[1].item()]
