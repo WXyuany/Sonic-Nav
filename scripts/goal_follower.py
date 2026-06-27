@@ -14,6 +14,7 @@ class GoalFollower(Node):
         self.create_subscription(Odometry,'/odom',self.on_odom,10)
         self.goal=None
         self.rx=0.0;self.ry=0.0;self.ryaw=0.0
+        self.started=False
         self.timer=self.create_timer(0.1,self.tick)
         self.get_logger().info('Ready. Set 2D Goal in RViz.')
 
@@ -28,7 +29,8 @@ class GoalFollower(Node):
         self.ryaw=math.atan2(2*(q.w*q.z),1-2*q.z*q.z)
 
     def tick(self):
-        pl={'toggle_policy_action':False,'locomotion_mode':0,'base_height_command':0.78,'navigate_cmd':[0,0,0]}
+        pl={'toggle_policy_action':not self.started,'locomotion_mode':0,'base_height_command':0.78,'navigate_cmd':[0,0,0]}
+        self.started=True
         if self.goal is None: pass
         else:
             dx=self.goal[0]-self.rx;dy=self.goal[1]-self.ry
