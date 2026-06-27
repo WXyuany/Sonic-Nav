@@ -65,7 +65,7 @@ try: os.remove("/tmp/proxy_ready")
 except: pass
 run = subprocess.Popen(["bash", "-c",
     f"source /opt/ros/humble/setup.bash && exec /usr/bin/python3 {REPO}/scripts/deploy_proxy.py"],
-    env=ENV, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    env=ENV, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 procs.append(run)
 print("[PROXY] Starting...")
 t0 = time.time()
@@ -74,8 +74,7 @@ while time.time() - t0 < 120:
         print("[PROXY] Ready!")
         break
     if run.poll() is not None:
-        print(f"[PROXY] CRASHED:\n{run.stdout.read()[-500:]}")
-        cleanup(); sys.exit(1)
+        print("[PROXY] CRASHED"); cleanup(); sys.exit(1)
     time.sleep(1)
 
 # 3. Sensor bridge

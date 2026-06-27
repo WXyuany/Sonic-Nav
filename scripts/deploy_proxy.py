@@ -21,10 +21,17 @@ os.close(slave)
 
 print("[PROXY] Waiting for deploy Init Done...")
 out = b""
+t0 = time.time()
 while b"Init Done" not in out:
     if select.select([master],[],[],0.5)[0]:
-        try: out += os.read(master, 4096)
+        try:
+            chunk = os.read(master, 4096)
+            out += chunk
+            sys.stdout.buffer.write(chunk); sys.stdout.flush()
         except: pass
+    if time.time() - t0 > 120:
+        print("[PROXY] Timeout waiting for Init Done", flush=True)
+        sys.exit(1)
 print("[PROXY] Init Done!")
 
 # Start control
