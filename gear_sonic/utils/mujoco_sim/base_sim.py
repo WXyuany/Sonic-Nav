@@ -124,6 +124,19 @@ class DefaultEnv:
             "range_max": self.lidar_sim.max_range,
         }
 
+    def _update_dynamic_obs(self):
+        t = self.mj_data.time
+        for i in range(self.mj_model.nu):
+            name = mujoco.mj_id2name(self.mj_model, mujoco.mjtObj.mjOBJ_ACTUATOR, i)
+            if name is None:
+                continue
+            if name == 'a1':
+                self.mj_data.ctrl[i] = 3.0 * np.sin(t * 0.8)
+            elif name == 'a2':
+                self.mj_data.ctrl[i] = 2.5 * np.cos(t * 0.6)
+            elif name == 'a3':
+                self.mj_data.ctrl[i] = 0.5 * np.sin(t * 0.3)
+
     def _write_qpos(self):
         try:
             np.save("/tmp/sonic_qpos.npy", self.mj_data.qpos.copy())
@@ -467,10 +480,13 @@ class DefaultEnv:
         self.torques = np.clip(self.torques, -self.torque_limit, self.torque_limit)
 
         if self.config["FREE_BASE"]:
-            # Prepend 6 zeros for the floating-base root DOF actuators
-            self.mj_data.ctrl = np.concatenate((np.zeros(6), self.torques))
+            ctrl = np.concatenate((np.zeros(6), self.torques))
         else:
-            self.mj_data.ctrl = self.torques
+            ctrl = self.torques
+        if len(ctrl) < self.mj_model.nu:
+            ctrl = np.concatenate((ctrl, np.zeros(self.mj_model.nu - len(ctrl))))
+        self.mj_data.ctrl = ctrl[:self.mj_model.nu]
+        self._update_dynamic_obs()
         mujoco.mj_step(self.mj_model, self.mj_data)
 
         self.check_fall()
