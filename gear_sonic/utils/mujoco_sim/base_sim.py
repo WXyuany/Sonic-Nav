@@ -102,13 +102,13 @@ class DefaultEnv:
             return
         try:
             self.lidar_sim = LidarSim(
-                self.mj_model, self.mj_data,
-                site_name="lidar",
-                num_beams=360,
-                max_range=30.0,
-            )
+                self.mj_model, self.mj_data, site_name="lidar",
+                num_beams=360, max_range=30.0)
+            from g1_ros2_nav.lidar_sim import Mid360Sim
+            self._mid360 = Mid360Sim(self.mj_model, self.mj_data)
         except Exception:
             self.lidar_sim = None
+            self._mid360 = None
 
     def lidar_step(self):
         if self.lidar_sim:
@@ -141,6 +141,24 @@ class DefaultEnv:
         try:
             np.save("/tmp/sonic_qpos.npy", self.mj_data.qpos.copy())
         except Exception as e:
+            pass
+
+    def _write_lidar(self):
+        if self.lidar_sim is None:
+            return
+        try:
+            self.lidar_sim.step()
+            np.save("/tmp/sonic_lidar.npy", self.lidar_sim.ranges)
+        except Exception:
+            pass
+
+    def _write_mid360(self):
+        if not hasattr(self, '_mid360'):
+            return
+        try:
+            self._mid360.step()
+            np.save("/tmp/sonic_mid360.npy", self._mid360.points)
+        except Exception:
             pass
 
     def _get_dof_indices_by_class(self):
@@ -491,6 +509,11 @@ class DefaultEnv:
 
         self.check_fall()
         self._write_qpos()
+        self._step_cnt = getattr(self, '_step_cnt', 0) + 1
+        if self._step_cnt % 2 == 0:
+            self._write_lidar()
+        if self._step_cnt % 5 == 0:
+            self._write_mid360()
 
     def apply_perturbation(self, key):
         perturbation_x_body = 0.0

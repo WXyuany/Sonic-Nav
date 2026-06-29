@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 import os, sys, time, signal, subprocess
+SCENE = sys.argv[1] if len(sys.argv) > 1 else "default"
+
+SCENES = {"default":"scene_43dof.xml","dynamic":"scene_dynamic.xml",
+          "stairs":"scene_stairs.xml","uneven":"scene_uneven.xml","table":"scene_table.xml"}
+SCENE_XML = SCENES.get(SCENE, "scene_43dof.xml")
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(SCRIPT_DIR)
@@ -9,9 +14,9 @@ ENV.update({"RMW_IMPLEMENTATION": "rmw_fastrtps_cpp", "ROS_LOCALHOST_ONLY": "1",
             "ROS_DOMAIN_ID": "42", "DISPLAY": ":1"})
 procs = []
 
-def run_script(script, name):
+def run_script(script, name, args=""):
     print(f"[{name}] Starting...")
-    cmd = f"source /opt/ros/humble/setup.bash && exec /usr/bin/python3 {REPO}/scripts/{script}"
+    cmd = f"source /opt/ros/humble/setup.bash && exec /usr/bin/python3 {REPO}/scripts/{script} {args}"
     p = subprocess.Popen(["bash", "-c", cmd], env=ENV, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     procs.append(p)
     time.sleep(3)
@@ -33,7 +38,17 @@ print("=" * 45)
 
 # 1. Sim
 sim = subprocess.Popen(["bash", "-c",
-    f"source {REPO}/.venv_sim/bin/activate && export PYTHONPATH='{REPO}:{REPO}/g1_ros2_nav' DISPLAY=:1 && exec python {REPO}/gear_sonic/scripts/run_sim_loop.py"],
+    f"cd {REPO} && python -c \"import yaml; "
+    f"from gear_sonic.utils.mujoco_sim.configs import SimLoopConfig; "
+    f"cfg=SimLoopConfig().load_wbc_yaml(); cfg['ROBOT_SCENE']='gear_sonic/data/robot_model/model_data/g1/{SCENE_XML}'; "
+    f"cfg['ENV_NAME']='default'; import gear_sonic; from pathlib import Path; "
+    f"import yaml as _y; _y.safe_dump(cfg, open('/tmp/wbc_override.yaml','w')); \" && "
+    f"source {REPO}/.venv_sim/bin/activate && export PYTHONPATH='{REPO}:{REPO}/g1_ros2_nav' DISPLAY=:1 && "
+    f"exec python -c \"import yaml; from gear_sonic.utils.mujoco_sim.simulator_factory import SimulatorFactory, init_channel; "
+    f"from gear_sonic.data.robot_model.instantiation.g1 import instantiate_g1_robot_model; "
+    f"cfg=yaml.safe_load(open('/tmp/wbc_override.yaml')); robot=instantiate_g1_robot_model(); init_channel(cfg); "
+    f"sim=SimulatorFactory.create_simulator(config=cfg, env_name='default', onscreen=True); "
+    f"SimulatorFactory.start_simulator(sim, as_thread=False); \""],
     env=ENV, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 procs.append(sim)
 print("[SIM] Starting...")
@@ -74,10 +89,8 @@ print("[CTRL] Robot should be standing")
 
 # 3. Sensors
 run_script("sensor_pub.py", "SENSOR")
-time.sleep(2)
-run_script("mid360_pub.py", "MID360")
-time.sleep(2)
-run_script("camera_pub.py", "CAM")
+time.sleep(3)
+run_script("camera_pub.py", "CAM", SCENE_XML)
 
 # 4. Navigation
 run_script("goal_follower.py", "NAV")

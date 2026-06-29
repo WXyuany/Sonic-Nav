@@ -13,7 +13,8 @@ from tf2_ros import TransformBroadcaster
 from std_msgs.msg import Header
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-xml = REPO + '/gear_sonic/data/robot_model/model_data/g1/scene_43dof.xml'
+SCENE = sys.argv[1] if len(sys.argv) > 1 else "scene_43dof.xml"
+xml = REPO + '/gear_sonic/data/robot_model/model_data/g1/' + SCENE
 W, H = 480, 360
 
 model = mujoco.MjModel.from_xml_path(xml)
