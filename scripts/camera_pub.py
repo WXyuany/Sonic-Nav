@@ -19,7 +19,7 @@ W, H = 480, 360
 
 model = mujoco.MjModel.from_xml_path(xml)
 data = mujoco.MjData(model)
-cam_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_CAMERA, 'front_cam')
+cam_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_CAMERA, 'head_camera')
 
 rclpy.init()
 n = Node('camera')
