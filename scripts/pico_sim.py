@@ -40,11 +40,11 @@ class PICOSim(Node):
         m.data = [bytes([b]) for b in msgpack.packb(pl, use_bin_type=True)]
         self.pub.publish(m)
 
-    def on_key(self, k):
-        global ARM, LEFT, RIGHT, HEAD
-        if k == '\x1b': return False
-        target = {'1': 'left', '2': 'right', '3': 'head'}.get(k)
-        if target: global ARM; ARM = target; print(f"  Active: {ARM}"); return True
+def on_key(self, k):
+    global ARM
+    if k == '\x1b': return False
+    target = {'1': 'left', '2': 'right', '3': 'head'}.get(k)
+    if target: ARM = target; print(f"  Active: {ARM}"); return True
 
         arr = {'left': self.l, 'right': self.r, 'head': self.h}[ARM]
         if   k == 'w': arr[0] += SPEED
