@@ -101,14 +101,9 @@ class DefaultEnv:
         if self.mj_model is None or LidarSim is None:
             return
         try:
-            self.lidar_sim = LidarSim(
-                self.mj_model, self.mj_data, site_name="lidar",
-                num_beams=360, max_range=30.0)
-            from g1_ros2_nav.lidar_sim import Mid360Sim
-            self._mid360 = Mid360Sim(self.mj_model, self.mj_data)
+            self.lidar_sim = LidarSim(self.mj_model, self.mj_data, site_name="lidar", num_beams=360, max_range=30.0)
         except Exception:
             self.lidar_sim = None
-            self._mid360 = None
 
     def lidar_step(self):
         if self.lidar_sim:
@@ -117,12 +112,21 @@ class DefaultEnv:
     def get_lidar_data(self):
         if self.lidar_sim is None:
             return None
-        return {
-            "ranges": self.lidar_sim.ranges.tolist(),
-            "angles": self.lidar_sim.angles.tolist(),
-            "range_min": self.lidar_sim.min_range,
-            "range_max": self.lidar_sim.max_range,
-        }
+        return {"ranges": self.lidar_sim.ranges.tolist(), "angles": self.lidar_sim.angles.tolist(),
+                "range_min": self.lidar_sim.min_range, "range_max": self.lidar_sim.max_range}
+
+    def _write_qpos(self):
+        try:
+            np.save("/tmp/sonic_qpos.npy", self.mj_data.qpos.copy())
+        except Exception:
+            pass
+
+    def _write_lidar(self):
+        self.lidar_step()
+        try:
+            np.save("/tmp/sonic_lidar.npy", self.lidar_sim.ranges if self.lidar_sim else np.zeros(360))
+        except Exception:
+            pass
 
     def _update_dynamic_obs(self):
         t = self.mj_data.time
@@ -508,6 +512,10 @@ class DefaultEnv:
         mujoco.mj_step(self.mj_model, self.mj_data)
 
         self.check_fall()
+        self._write_qpos()
+        self._step_cnt = getattr(self, '_step_cnt', 0) + 1
+        if self._step_cnt % 2 == 0:
+            self._write_lidar()
         self._write_qpos()
         self._step_cnt = getattr(self, '_step_cnt', 0) + 1
         if self._step_cnt % 2 == 0:

@@ -89,7 +89,9 @@ print("[CTRL] Robot should be standing")
 
 # 3. Sensors
 run_script("sensor_pub.py", "SENSOR")
-time.sleep(3)
+time.sleep(2)
+run_script("mid360_pub.py", "MID360")
+time.sleep(2)
 run_script("camera_pub.py", "CAM", SCENE_XML)
 
 # 4. Navigation
