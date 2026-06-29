@@ -51,7 +51,7 @@ def main():
     pico = PICOSim()
     running, last = True, time.time()
     import threading
-    threading.Thread(target=lambda: [rclpy.spin_once(pico,0.02) for _ in iter(int,1) if running and rclpy.ok()], daemon=True).start()
+    threading.Thread(target=lambda: [rclpy.spin_once(pico, timeout_sec=0.02) for _ in iter(int,1) if running and rclpy.ok()], daemon=True).start()
     try:
         while running:
             if select.select([sys.stdin],[],[],0.05)[0]: running = pico.on_key(sys.stdin.read(1))
