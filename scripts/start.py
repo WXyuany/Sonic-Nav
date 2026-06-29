@@ -36,19 +36,18 @@ print("=" * 45)
 print("  Sonic-Nav  |  DOMAIN=42")
 print("=" * 45)
 
+# Pre-switch scene
+if SCENE != "default":
+    yaml_path = f"{REPO}/gear_sonic/utils/mujoco_sim/wbc_configs/g1_29dof_sonic_model12.yaml"
+    old = open(yaml_path).read()
+    new = old.replace("scene_43dof.xml", SCENE_XML)
+    if old != new:
+        open(yaml_path, "w").write(new)
+        print(f"[SCENE] Switched to {SCENE}")
+
 # 1. Sim
 sim = subprocess.Popen(["bash", "-c",
-    f"cd {REPO} && python -c \"import yaml; "
-    f"from gear_sonic.utils.mujoco_sim.configs import SimLoopConfig; "
-    f"cfg=SimLoopConfig().load_wbc_yaml(); cfg['ROBOT_SCENE']='gear_sonic/data/robot_model/model_data/g1/{SCENE_XML}'; "
-    f"cfg['ENV_NAME']='default'; import gear_sonic; from pathlib import Path; "
-    f"import yaml as _y; _y.safe_dump(cfg, open('/tmp/wbc_override.yaml','w')); \" && "
-    f"source {REPO}/.venv_sim/bin/activate && export PYTHONPATH='{REPO}:{REPO}/g1_ros2_nav' DISPLAY=:1 && "
-    f"exec python -c \"import yaml; from gear_sonic.utils.mujoco_sim.simulator_factory import SimulatorFactory, init_channel; "
-    f"from gear_sonic.data.robot_model.instantiation.g1 import instantiate_g1_robot_model; "
-    f"cfg=yaml.safe_load(open('/tmp/wbc_override.yaml')); robot=instantiate_g1_robot_model(); init_channel(cfg); "
-    f"sim=SimulatorFactory.create_simulator(config=cfg, env_name='default', onscreen=True); "
-    f"SimulatorFactory.start_simulator(sim, as_thread=False); \""],
+    f"source {REPO}/.venv_sim/bin/activate && export PYTHONPATH='{REPO}:{REPO}/g1_ros2_nav' DISPLAY=:1 && exec python {REPO}/gear_sonic/scripts/run_sim_loop.py"],
     env=ENV, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 procs.append(sim)
 print("[SIM] Starting...")
