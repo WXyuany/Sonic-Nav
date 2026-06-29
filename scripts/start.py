@@ -60,7 +60,7 @@ deploy = subprocess.Popen(["bash", "-c",
     f"source {REPO}/gear_sonic_deploy/scripts/setup_env.sh >/dev/null 2>&1 && cd {REPO}/gear_sonic_deploy && "
     f"exec ./target/release/g1_deploy_onnx_ref lo policy/release/model_decoder.onnx reference/example/ "
     f"--obs-config policy/release/observation_config.yaml --encoder-file policy/release/model_encoder.onnx "
-    f"--planner-file planner/target_vel/V2/planner_sonic.onnx --input-type manager --output-type all "
+    f"--planner-file planner/target_vel/V2/planner_sonic.onnx --input-type ros2 --output-type all "
     f"--zmq-host localhost --disable-crc-check"],
     env=ENV, stdout=open("/tmp/sonic_deploy.log", "w"), stderr=subprocess.STDOUT)
 procs.append(deploy)
