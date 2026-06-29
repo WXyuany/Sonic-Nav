@@ -10,6 +10,7 @@ RIGHT = np.array([0.15, -0.20, 1.05])
 HEAD  = np.array([0.04, 0.0, 1.35])
 SPEED = 0.05
 ARM   = 'left'
+PAUSED = True
 
 class PICOSim(Node):
     def __init__(self):
@@ -19,9 +20,12 @@ class PICOSim(Node):
         self._print_help()
 
     def _print_help(self):
-        print("\n  PICO Sim  1/2/3:hand  WASD:move  Q/E:up/down  Esc:quit\n  Active: " + ARM)
+        print("\n  PICO Sim  Space:start  1/2/3:hand  WASD:move  Q/E:up/down  Esc:quit")
+        print("  Status: " + ("ACTIVE" if not PAUSED else "PAUSED (press Space)"))
 
     def send(self):
+        global PAUSED
+        if PAUSED: return
         pl = {"navigate_cmd":[0,0,0],"locomotion_mode":0,"base_height_command":0.78,
               "toggle_policy_action":False,
               "wrist_pose":list(self.l)+[1,0,0,0]+list(self.r)+[1,0,0,0]}
@@ -32,6 +36,11 @@ class PICOSim(Node):
     def on_key(self, k):
         global ARM
         if k == '\x1b': return False
+        if k == ' ':
+            global PAUSED; PAUSED = not PAUSED
+            print("  Status:", "ACTIVE" if not PAUSED else "PAUSED")
+            return True
+        if PAUSED: return True
         if k in '123':
             ARM = {'1':'left','2':'right','3':'head'}[k]
             print("  Active:", ARM)
