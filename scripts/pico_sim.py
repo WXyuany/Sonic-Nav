@@ -23,7 +23,8 @@ class PICOSim(Node):
 
     def send(self):
         pl = {"navigate_cmd":[0,0,0],"locomotion_mode":0,"base_height_command":0.78,
-              "toggle_policy_action":False,"wrist_pose":list(self.l)+list(self.r)}
+              "toggle_policy_action":False,
+              "wrist_pose":list(self.l)+[1,0,0,0]+list(self.r)+[1,0,0,0]}
         m = ByteMultiArray()
         m.data = [bytes([b]) for b in msgpack.packb(pl, use_bin_type=True)]
         self.pub.publish(m)
