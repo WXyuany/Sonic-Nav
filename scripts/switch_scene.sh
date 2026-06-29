@@ -11,7 +11,8 @@ case $SCENE in
   dynamic)  FILE="scene_dynamic.xml" ;;
   stairs)   FILE="scene_stairs.xml" ;;
   uneven)   FILE="scene_uneven.xml" ;;
-  *) echo "Usage: $0 {default|dynamic|stairs|uneven}"; exit 1 ;;
+  table)    FILE="scene_table.xml" ;;  
+  *) echo "Usage: $0 {default|dynamic|stairs|uneven|table}"; exit 1 ;;
 esac
 
 sed -i "s|scene_[a-z]*.xml|$FILE|" "$YAML"

@@ -14,7 +14,7 @@ from std_msgs.msg import Header
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 xml = REPO + '/gear_sonic/data/robot_model/model_data/g1/scene_43dof.xml'
-W, H = 640, 480
+W, H = 480, 360
 
 model = mujoco.MjModel.from_xml_path(xml)
 data = mujoco.MjData(model)
@@ -78,7 +78,7 @@ def pub():
     ci.k = [fx, 0.0, W/2, 0.0, fx, H/2, 0.0, 0.0, 1.0]
     ci_pub.publish(ci)
 
-n.create_timer(0.2, pub)
+n.create_timer(0.1, pub)
 print('Camera: /camera/color /camera/depth')
 try: rclpy.spin(n)
 except: pass
