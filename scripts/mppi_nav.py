@@ -79,10 +79,12 @@ class MPPINav(Node):
         if len(self.pts) > 100:
             op = torch.from_numpy(self.pts[:500]).to(DEV)
             subset = slice(0, min(N_SAMPLES, 200))
-            for i in range(subset.stop):
-                sx, sy = all_s[-1][i, 0].item(), all_s[-1][i, 1].item()
-                d = torch.norm(op - torch.tensor([sx, sy], device=DEV), dim=1).min().item()
-                if d < 0.8: costs[i] += 500
+            for t in [HORIZON//4, HORIZON//2, 3*HORIZON//4, HORIZON-1]:
+                s = all_s[t]
+                for i in range(subset.stop):
+                    sx, sy = s[i, 0].item(), s[i, 1].item()
+                    d = torch.norm(op - torch.tensor([sx, sy], device=DEV), dim=1).min().item()
+                    if d < 0.8: costs[i] += 300
 
         w = torch.exp(-(costs - costs.min()) / LAMBDA)
         w /= w.sum() + 1e-8
