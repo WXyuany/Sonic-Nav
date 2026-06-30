@@ -9,9 +9,9 @@ ENV.update({"RMW_IMPLEMENTATION": "rmw_fastrtps_cpp", "ROS_LOCALHOST_ONLY": "1",
             "ROS_DOMAIN_ID": "42", "DISPLAY": ":1"})
 procs = []
 
-def run_script(script, name):
+def run_script(script, name, args=""):
     print(f"[{name}] Starting...")
-    cmd = f"source /opt/ros/humble/setup.bash && exec /usr/bin/python3 {REPO}/scripts/{script}"
+    cmd = f"source /opt/ros/humble/setup.bash && exec /usr/bin/python3 {REPO}/scripts/{script} {args}"
     p = subprocess.Popen(["bash", "-c", cmd], env=ENV, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     procs.append(p)
     time.sleep(3)
@@ -27,20 +27,21 @@ def cleanup(*_):
 signal.signal(signal.SIGINT, cleanup)
 signal.signal(signal.SIGTERM, cleanup)
 
+SCENE = sys.argv[1] if len(sys.argv) > 1 else "default"
+SCENES = {"default":"scene_43dof.xml","dynamic":"scene_dynamic.xml",
+          "stairs":"scene_stairs.xml","uneven":"scene_uneven.xml","table":"scene_table.xml"}
+SCENE_XML = SCENES.get(SCENE, "scene_43dof.xml")
+
 print("=" * 45)
-print("  Sonic-Nav MPPI |  DOMAIN=42")
+print(f"  Sonic-Nav MPPI |  {SCENE}")
 print("=" * 45)
 
-# 1. Sim
 sim = subprocess.Popen(["bash", "-c",
     f"source {REPO}/.venv_sim/bin/activate && export PYTHONPATH='{REPO}:{REPO}/g1_ros2_nav' DISPLAY=:1 && exec python {REPO}/gear_sonic/scripts/run_sim_loop.py"],
     env=ENV, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 procs.append(sim)
-print("[SIM] Starting...")
-time.sleep(6)
-print("[SIM] Running")
+print("[SIM] Starting..."); time.sleep(8); print("[SIM] Running")
 
-# 2. Deploy (ROS2 mode)
 open("/tmp/sonic_deploy.log", "w").close()
 deploy = subprocess.Popen(["bash", "-c",
     f"source {REPO}/gear_sonic_deploy/scripts/setup_env.sh >/dev/null 2>&1 && cd {REPO}/gear_sonic_deploy && "
@@ -59,8 +60,6 @@ while time.time() - t0 < 120:
     time.sleep(1)
 print("[DEPLOY] Init Done!")
 
-# Auto-start control
-print("[CTRL] Sending start command...")
 subprocess.run(["bash", "-c",
     "source /opt/ros/humble/setup.bash && /usr/bin/python3 -c '"
     "import os,rclpy,msgpack,time;os.environ.update({\"RMW_IMPLEMENTATION\":\"rmw_fastrtps_cpp\",\"ROS_LOCALHOST_ONLY\":\"1\",\"ROS_DOMAIN_ID\":\"42\"});"
@@ -70,27 +69,20 @@ subprocess.run(["bash", "-c",
     "m=ByteMultiArray();m.data=[bytes([b]) for b in msgpack.packb(pl,use_bin_type=True)];p.publish(m);time.sleep(2);"
     "n.destroy_node();rclpy.shutdown();print(\"OK\")'"],
     env=ENV)
-print("[CTRL] Robot should be standing")
+print("[CTRL] Robot standing")
 
-# 3. Sensors
 run_script("sensor_pub.py", "SENSOR")
 time.sleep(2)
 run_script("mid360_pub.py", "MID360")
 time.sleep(2)
-run_script("camera_pub.py", "CAM")
-
-# 4. Navigation
+run_script("camera_pub.py", "CAM", SCENE_XML)
 run_script("mppi_nav.py", "MPPI")
 
 print()
 print("=" * 45)
-print("  Ready! Run RViz:")
-print("    bash scripts/rviz.sh")
+print("  Ready! bash scripts/rviz.sh")
 print("  Click 2D Goal Pose to navigate.")
-print("  Ctrl+C to stop all.")
+print("  Ctrl+C to stop.")
 print("=" * 45)
 
-try:
-    while True: time.sleep(1)
-except KeyboardInterrupt:
-    cleanup()
+while True: time.sleep(1)
