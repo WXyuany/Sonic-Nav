@@ -70,18 +70,19 @@ class MPPINav(Node):
         for t in range(HORIZON):
             s = all_s[t]
             ex = s[:, 0]-self.goal[0]; ey = s[:, 1]-self.goal[1]
-            costs += 3.0 * (ex*ex + ey*ey)
+            costs += 1.0 * (ex*ex + ey*ey)
             yaw_err = target_yaw - s[:, 2]
             yaw_err = torch.atan2(torch.sin(yaw_err), torch.cos(yaw_err))
-            costs += 1.0 * yaw_err.abs()
-            if t > 0: costs += 0.1 * ((noise[:, t]-noise[:, t-1])**2).sum(dim=1)
+            costs[t >= HORIZON//2] += 5.0 * yaw_err[t >= HORIZON//2].abs()
+            if t > 0: costs += 0.2 * ((noise[:, t]-noise[:, t-1])**2).sum(dim=1)
 
-        if len(self.pts) > 0:
-            op = torch.from_numpy(self.pts).to(DEV)
-            for i in range(N_SAMPLES):
+        if len(self.pts) > 100:
+            op = torch.from_numpy(self.pts[:500]).to(DEV)
+            subset = slice(0, min(N_SAMPLES, 200))
+            for i in range(subset.stop):
                 sx, sy = all_s[-1][i, 0].item(), all_s[-1][i, 1].item()
                 d = torch.norm(op - torch.tensor([sx, sy], device=DEV), dim=1).min().item()
-                if d < 0.6: costs[i] += 200
+                if d < 0.8: costs[i] += 500
 
         w = torch.exp(-(costs - costs.min()) / LAMBDA)
         w /= w.sum() + 1e-8
