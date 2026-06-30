@@ -106,11 +106,13 @@ class Mid360Sim:
                     d = max(d, self._min_range)
                     self._points[idx] = [pos[0]+dx*d, pos[1]+dy*d, pos[2]+dz*d]
                 else:
-                    self._points[idx] = [pos[0]+dx*self._max_range, pos[1]+dy*self._max_range, pos[2]+dz*self._max_range]
+                    self._points[idx] = [np.nan, np.nan, np.nan]
                 idx += 1
 
     @property
-    def points(self): return self._points
+    def points(self):
+        mask = ~np.isnan(self._points[:, 0])
+        return self._points[mask]
     @property
     def max_range(self): return self._max_range
     @property
