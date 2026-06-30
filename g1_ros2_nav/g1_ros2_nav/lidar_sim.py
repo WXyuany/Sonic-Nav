@@ -4,15 +4,7 @@ import mujoco
 
 
 class LidarSim:
-    def __init__(
-        self,
-        model: mujoco.MjModel,
-        data: mujoco.MjData,
-        site_name: str = "lidar",
-        num_beams: int = 360,
-        max_range: float = 30.0,
-        min_range: float = 0.1,
-    ):
+    def __init__(self, model, data, site_name="lidar", num_beams=360, max_range=30.0, min_range=0.1):
         self._model = model
         self._data = data
         self._site_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, site_name)
@@ -21,10 +13,7 @@ class LidarSim:
         self._min_range = min_range
         self._angles = np.linspace(0, 2 * math.pi, num_beams, endpoint=False)
         self._ranges = np.full(num_beams, max_range, dtype=np.float64)
-        try:
-            self._robot_body = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "torso_link")
-        except Exception:
-            self._robot_body = -1
+        self._robot_body = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "pelvis")
 
     def step(self):
         pos = self._data.site_xpos[self._site_id].copy()
@@ -77,10 +66,7 @@ class Mid360Sim:
         self._site_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, site_name)
         self._max_range = max_range
         self._min_range = min_range
-        try:
-            self._robot_body = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "torso_link")
-        except Exception:
-            self._robot_body = -1
+        self._robot_body = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "pelvis")
         h_beams, v_beams = 720, 16
         self._h_angles = np.linspace(0, 2*math.pi, h_beams, endpoint=False)
         self._v_angles = np.linspace(-20, 20, v_beams) * math.pi / 180
