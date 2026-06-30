@@ -73,7 +73,7 @@ class MPPINav(Node):
             costs += 1.0 * (ex*ex + ey*ey)
             yaw_err = target_yaw - s[:, 2]
             yaw_err = torch.atan2(torch.sin(yaw_err), torch.cos(yaw_err))
-            costs[t >= HORIZON//2] += 5.0 * yaw_err[t >= HORIZON//2].abs()
+            costs += 3.0 * yaw_err.abs()
             if t > 0: costs += 0.2 * ((noise[:, t]-noise[:, t-1])**2).sum(dim=1)
 
         if len(self.pts) > 100:
