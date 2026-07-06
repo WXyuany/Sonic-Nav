@@ -1,0 +1,40 @@
+controller:
+  max_v: 0.60
+  max_w: 0.80
+  max_dv: 0.060
+  max_dw: 0.095
+  dt: 0.12
+  horizon: 22
+  v_deadband: 0.035
+  w_deadband: 0.040
+robot:
+  radius: 0.42
+  safety_radius: 0.72
+  stop_radius: 0.48
+goal:
+  tolerance: 0.45
+  final_slow_radius: 0.95
+heading:
+  turn_in_place_error: 1.25
+  spot_turn_error: 1.55
+  forward_full_error: 0.45
+  min_curve_speed: 0.10
+detour:
+  trigger_distance: 1.55
+  clear_distance: 2.20
+  lookahead: 1.45
+  offset: 1.15
+global_plan:
+  lookahead: 1.10
+  max_deviation: 2.0
+obstacles:
+  max_range: 7.0
+  min_z: -0.55
+  max_z: 0.85
+  voxel: 0.10
+  max_points: 900
+topics:
+  cmd_vel: /cmd_vel_nav
+  local_costmap: /local_costmap
+  local_plan: /local_plan
+  debug_prefix: /sonic_nav/dwa

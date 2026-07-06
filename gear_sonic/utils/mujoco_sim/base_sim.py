@@ -6,6 +6,7 @@ BaseSimulator wraps DefaultEnv with rate-limiting and viewer/image update loops.
 """
 
 import os
+import json
 import pathlib
 from pathlib import Path
 import pickle
@@ -28,10 +29,13 @@ from gear_sonic.utils.mujoco_sim.robot import Robot
 
 try:
     from g1_ros2_nav.lidar_sim import LidarSim
+    from g1_ros2_nav.tmp_io import atomic_save_npy
 except ImportError:
     LidarSim = None
+    atomic_save_npy = None
 
 GEAR_SONIC_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+BOX_GRASP_ASSIST_FILE = os.environ.get("SONIC_BOX_GRASP_ASSIST_FILE", "/tmp/sonic_box_grasp_assist.json")
 
 
 class DefaultEnv:
@@ -116,10 +120,7 @@ class DefaultEnv:
                 "range_min": self.lidar_sim.min_range, "range_max": self.lidar_sim.max_range}
 
     def _write_qpos(self):
-        try:
-            np.save("/tmp/sonic_qpos.npy", self.mj_data.qpos.copy())
-        except Exception:
-            pass
+        pass
 
     def _write_lidar(self):
         self.lidar_step()
@@ -142,9 +143,11 @@ class DefaultEnv:
                 self.mj_data.ctrl[i] = 0.5 * np.sin(t * 0.3)
 
     def _write_qpos(self):
+        if atomic_save_npy is None:
+            return
         try:
-            np.save("/tmp/sonic_qpos.npy", self.mj_data.qpos.copy())
-        except Exception as e:
+            atomic_save_npy("/tmp/sonic_qpos.npy", self.mj_data.qpos.copy())
+        except OSError:
             pass
 
     def _write_lidar(self):
@@ -164,6 +167,106 @@ class DefaultEnv:
             np.save("/tmp/sonic_mid360.npy", self._mid360.points)
         except Exception:
             pass
+
+    def _init_box_grasp_assist(self):
+        self.box_grasp_assist = None
+        if os.environ.get("SONIC_BOX_GRASP_ASSIST", "1").lower() in {"0", "false", "off", "no"}:
+            return
+
+        box_joint_id = mujoco.mj_name2id(
+            self.mj_model, mujoco.mjtObj.mjOBJ_JOINT, "demo_box_freejoint"
+        )
+        box_body_id = mujoco.mj_name2id(self.mj_model, mujoco.mjtObj.mjOBJ_BODY, "demo_box")
+        box_geom_id = mujoco.mj_name2id(self.mj_model, mujoco.mjtObj.mjOBJ_GEOM, "demo_box_visual")
+        base_body_id = mujoco.mj_name2id(self.mj_model, mujoco.mjtObj.mjOBJ_BODY, "pelvis")
+        if box_joint_id < 0 or box_body_id < 0 or box_geom_id < 0 or base_body_id < 0:
+            return
+
+        self.box_grasp_assist = {
+            "path": BOX_GRASP_ASSIST_FILE,
+            "box_qpos_adr": int(self.mj_model.jnt_qposadr[box_joint_id]),
+            "box_qvel_adr": int(self.mj_model.jnt_dofadr[box_joint_id]),
+            "box_body_id": int(box_body_id),
+            "box_geom_id": int(box_geom_id),
+            "box_geom_contype": int(self.mj_model.geom_contype[box_geom_id]),
+            "box_geom_conaffinity": int(self.mj_model.geom_conaffinity[box_geom_id]),
+            "base_body_id": int(base_body_id),
+            "box_collision_disabled": False,
+        }
+        print(f"Box grasp assist ready: {BOX_GRASP_ASSIST_FILE}")
+
+    def _set_box_assist_collision(self, enabled: bool):
+        if self.box_grasp_assist is None:
+            return
+        geom_id = self.box_grasp_assist["box_geom_id"]
+        disabled = self.box_grasp_assist["box_collision_disabled"]
+        if enabled and not disabled:
+            self.mj_model.geom_contype[geom_id] = 0
+            self.mj_model.geom_conaffinity[geom_id] = 0
+            self.box_grasp_assist["box_collision_disabled"] = True
+        elif not enabled and disabled:
+            self.mj_model.geom_contype[geom_id] = self.box_grasp_assist["box_geom_contype"]
+            self.mj_model.geom_conaffinity[geom_id] = self.box_grasp_assist["box_geom_conaffinity"]
+            self.box_grasp_assist["box_collision_disabled"] = False
+
+    def _read_box_grasp_assist(self):
+        if self.box_grasp_assist is None:
+            return None
+        path = self.box_grasp_assist["path"]
+        try:
+            if time.time() - os.path.getmtime(path) > 1.0:
+                return None
+            with open(path) as f:
+                payload = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            return None
+        if not payload.get("enabled", False):
+            return None
+        return payload
+
+    def _apply_box_grasp_assist(self):
+        payload = self._read_box_grasp_assist()
+        if payload is None:
+            if self.box_grasp_assist is not None:
+                self._set_box_assist_collision(False)
+            return
+
+        if not payload.get("box_enabled", True):
+            self._set_box_assist_collision(False)
+            return
+
+        self._set_box_assist_collision(True)
+
+        offset = np.asarray(payload.get("local_offset", [0.52, 0.0, -0.30]), dtype=np.float64)
+        if offset.shape != (3,) or not np.all(np.isfinite(offset)):
+            offset = np.asarray([0.52, 0.0, -0.30], dtype=np.float64)
+
+        blend = float(payload.get("blend", 1.0))
+        blend = min(1.0, max(0.0, blend))
+        if blend <= 0.0:
+            return
+
+        base_body_id = self.box_grasp_assist["base_body_id"]
+        qpos_adr = self.box_grasp_assist["box_qpos_adr"]
+        qvel_adr = self.box_grasp_assist["box_qvel_adr"]
+
+        target_offset = np.zeros(3, dtype=np.float64)
+        mujoco.mju_rotVecQuat(target_offset, offset, self.mj_data.xquat[base_body_id])
+        target_pos = self.mj_data.xpos[base_body_id] + target_offset
+
+        base_quat = self.mj_data.xquat[base_body_id]
+        yaw = Rotation.from_quat(base_quat[[1, 2, 3, 0]]).as_euler("xyz")[2]
+        target_quat_xyzw = Rotation.from_euler("z", yaw).as_quat()
+        target_quat = np.asarray(
+            [target_quat_xyzw[3], target_quat_xyzw[0], target_quat_xyzw[1], target_quat_xyzw[2]],
+            dtype=np.float64,
+        )
+
+        current_pos = self.mj_data.qpos[qpos_adr : qpos_adr + 3].copy()
+        self.mj_data.qpos[qpos_adr : qpos_adr + 3] = current_pos * (1.0 - blend) + target_pos * blend
+        self.mj_data.qpos[qpos_adr + 3 : qpos_adr + 7] = target_quat
+        self.mj_data.qvel[qvel_adr : qvel_adr + 6] = 0.0
+        mujoco.mj_forward(self.mj_model, self.mj_data)
 
     def _get_dof_indices_by_class(self):
         with tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".xml") as f:
@@ -231,6 +334,7 @@ class DefaultEnv:
         self.torso_index = mujoco.mj_name2id(self.mj_model, mujoco.mjtObj.mjOBJ_BODY, "torso_link")
         self.root_body = "pelvis"
         self.root_body_id = self.mj_model.body(self.root_body).id
+        self._init_box_grasp_assist()
 
         self.joint_class_map = self._get_dof_indices_by_class()
 
@@ -510,6 +614,7 @@ class DefaultEnv:
         self.mj_data.ctrl = ctrl[:self.mj_model.nu]
         self._update_dynamic_obs()
         mujoco.mj_step(self.mj_model, self.mj_data)
+        self._apply_box_grasp_assist()
 
         self.check_fall()
         self._write_qpos()

@@ -1,0 +1,9 @@
+map:
+  resolution: 0.06
+  inflation: 0.34
+  margin: 0.8
+local_costmap:
+  resolution: 0.06
+  inflation_radius: 0.36
+dwa_profile: default
+mppi_profile: default

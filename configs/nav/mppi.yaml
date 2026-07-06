@@ -1,0 +1,41 @@
+controller:
+  horizon: 24
+  dt: 0.10
+  samples: 1000
+  sigma: 0.30
+  lambda: 0.45
+  max_v: 0.42
+  max_w: 0.50
+  max_dv: 0.035
+  max_dw: 0.055
+robot:
+  radius: 0.44
+  safety_radius: 0.78
+  hard_obstacle_radius: 0.54
+heading:
+  turn_in_place_error: 1.35
+  spot_turn_error: 1.65
+  forward_full_error: 0.45
+  min_curve_speed: 0.055
+detour:
+  trigger_distance: 1.25
+  clear_distance: 1.65
+  offset: 0.90
+  lookahead: 1.35
+global_plan:
+  lookahead: 1.15
+  max_deviation: 2.0
+obstacles:
+  emergency_front: 0.38
+  max_range: 7.0
+  min_z: -0.55
+  max_z: 0.85
+  voxel: 0.10
+  max_points: 900
+carma:
+  enabled: false
+topics:
+  cmd_vel: /cmd_vel_nav
+  local_costmap: /local_costmap
+  local_plan: /local_plan
+  debug_prefix: /sonic_nav/mppi

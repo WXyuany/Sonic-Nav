@@ -1,0 +1,39 @@
+<mujoco model="g1_uneven">
+  <include file="g1_29dof_with_hand.xml"/>
+  <statistic center="0 0 0.5" extent="12.0"/>
+  <visual>
+    <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+    <global azimuth="-130" elevation="-20" offwidth="1280" offheight="960"/>
+  </visual>
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072"/>
+    <texture type="2d" name="ground" builtin="checker" mark="edge" rgb1="0.3 0.4 0.3" rgb2="0.2 0.3 0.2" markrgb="0.5 0.5 0.5" width="300" height="300"/>
+    <material name="ground_mat" texture="ground" texuniform="true" texrepeat="10 10" reflectance="0.2"/>
+    <material name="rock" rgba="0.55 0.5 0.45 1"/>
+    <material name="wall" rgba="0.5 0.55 0.5 1"/>
+    <material name="bump" rgba="0.6 0.55 0.4 1"/>
+  </asset>
+  <worldbody>
+    <light pos="0 0 10" dir="0 0 -1" directional="true"/>
+    <geom name="floor" size="0 0 0.05" type="plane" material="ground_mat"/>
+    <site name="com_marker" pos="0.1 0 0" size="0.05" rgba="1 0 0 1" type="sphere"/>
+    <geom name="w_n" type="box" size="8 0.05 1.0" pos="0 8 1.0" material="wall"/>
+    <geom name="w_s" type="box" size="8 0.05 1.0" pos="0 -8 1.0" material="wall"/>
+    <geom name="w_e" type="box" size="0.05 8 1.0" pos="8 0 1.0" material="wall"/>
+    <geom name="w_w" type="box" size="0.05 8 1.0" pos="-8 0 1.0" material="wall"/>
+    <geom name="b1" type="sphere" size="0.4" pos="1.5 0.5 0.15" material="bump"/>
+    <geom name="b2" type="sphere" size="0.3" pos="-2 -1 0.1" material="bump"/>
+    <geom name="b3" type="sphere" size="0.5" pos="-4 2 0.2" material="bump"/>
+    <geom name="b4" type="sphere" size="0.35" pos="3 -3 0.12" material="bump"/>
+    <geom name="b5" type="sphere" size="0.25" pos="0 5 0.08" material="bump"/>
+    <geom name="b6" type="sphere" size="0.45" pos="5 3 0.18" material="bump"/>
+    <geom name="b7" type="sphere" size="0.2" pos="-5 -4 0.07" material="bump"/>
+    <geom name="b8" type="sphere" size="0.3" pos="6 -1 0.1" material="bump"/>
+    <geom name="r1" type="sphere" size="0.35" pos="2.5 -2 0.35" material="rock"/>
+    <geom name="r2" type="sphere" size="0.4" pos="-1.5 3.5 0.4" material="rock"/>
+    <geom name="r3" type="sphere" size="0.3" pos="4 4 0.3" material="rock"/>
+    <geom name="r4" type="sphere" size="0.5" pos="-3 -3 0.5" material="rock"/>
+  </worldbody>
+  <default><geom friction="1.0"/></default>
+</mujoco>

@@ -1,0 +1,43 @@
+<mujoco model="g1_table">
+  <include file="g1_29dof_with_hand.xml"/>
+  <statistic center="0 0 0.5" extent="8.0"/>
+  <visual>
+    <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+    <global azimuth="-130" elevation="-20" offwidth="1280" offheight="960"/>
+  </visual>
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072"/>
+    <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3"
+      markrgb="0.8 0.8 0.8" width="300" height="300"/>
+    <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="10 10" reflectance="0.2"/>
+    <material name="table_mat" rgba="0.55 0.35 0.2 1"/>
+    <material name="cup_mat" rgba="0.9 0.9 0.95 1"/>
+    <material name="wall_mat" rgba="0.6 0.6 0.65 1"/>
+  </asset>
+
+  <worldbody>
+    <light pos="0 0 8" dir="0 0 -1" directional="true"/>
+    <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
+    <site name="com_marker" pos="0.1 0 0" size="0.05" rgba="1 0 0 1" type="sphere"/>
+
+    <geom name="w_n" type="box" size="8 0.05 1.0" pos="0 8 1.0" material="wall_mat"/>
+    <geom name="w_s" type="box" size="8 0.05 1.0" pos="0 -8 1.0" material="wall_mat"/>
+    <geom name="w_e" type="box" size="0.05 8 1.0" pos="8 0 1.0" material="wall_mat"/>
+    <geom name="w_w" type="box" size="0.05 8 1.0" pos="-8 0 1.0" material="wall_mat"/>
+
+    <!-- Table: top + 4 legs -->
+    <geom name="table_top" type="box" size="0.8 0.5 0.03" pos="3 1.5 0.73" material="table_mat"/>
+    <geom name="leg_fl" type="cylinder" size="0.03 0.35" pos="2.3 1.05 0.35" material="table_mat"/>
+    <geom name="leg_fr" type="cylinder" size="0.03 0.35" pos="3.7 1.05 0.35" material="table_mat"/>
+    <geom name="leg_bl" type="cylinder" size="0.03 0.35" pos="2.3 1.95 0.35" material="table_mat"/>
+    <geom name="leg_br" type="cylinder" size="0.03 0.35" pos="3.7 1.95 0.35" material="table_mat"/>
+
+    <!-- Cup on table -->
+    <body name="cup" pos="3 1.5 0.76">
+      <geom name="cup_body" type="cylinder" size="0.04 0.08" material="cup_mat"/>
+      <geom name="cup_base" type="cylinder" size="0.03 0.01" pos="0 0 -0.09" material="cup_mat"/>
+    </body>
+  </worldbody>
+  <default><geom friction="1.0"/></default>
+</mujoco>

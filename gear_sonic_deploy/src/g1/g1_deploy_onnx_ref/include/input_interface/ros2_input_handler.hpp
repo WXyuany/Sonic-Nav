@@ -757,12 +757,13 @@ public:
                     // Height 0.72-0.88: Normal walking modes
                     if (movement_mag > 0.01f) {
                         // Moving: use walk modes
-                        // Compute moving direction (same as gamepad logic)
-                        planner_moving_direction = std::atan2(lin_vel_y, lin_vel_x) + planner_moving_direction;
-                        
-                        // Bin the moving direction to 8 evenly spaced directions and get corresponding speed
-                        auto [binned_angle, direction_speed] = bin_angle_to_8_directions(planner_moving_direction);
-                        planner_moving_direction = binned_angle;
+                        // Quantise the body-frame command direction like the gamepad,
+                        // then rotate it by the continuous planner facing angle.  This
+                        // keeps a forward ROS command aligned with the current facing
+                        // direction instead of snapping it to world-frame 45 degree bins.
+                        double body_moving_direction = std::atan2(lin_vel_y, lin_vel_x);
+                        auto [binned_body_angle, direction_speed] = bin_angle_to_8_directions(body_moving_direction);
+                        planner_moving_direction = binned_body_angle + planner_facing_angle_;
                         
                         // Compute normalized movement direction from binned angle
                         final_movement[0] = std::cos(planner_moving_direction);
@@ -774,12 +775,23 @@ public:
                             final_mode = static_cast<int>(LocomotionMode::WALK);
                             final_speed = -1.0f;
                         } else {
-                            // Slow walk mode: speed varies by direction (faster forward/lateral, slower backward)
+                            // Slow walk mode: use the ROS linear velocity magnitude as
+                            // the custom planner speed.  This makes DWA/MPPI velocity
+                            // commands meaningful instead of reducing them to a moving
+                            // versus not-moving switch.
                             final_mode = static_cast<int>(LocomotionMode::SLOW_WALK);
-                            final_speed = direction_speed;
+                            double commanded_speed = std::clamp(movement_mag, 0.08, 0.80);
+                            final_speed = std::isfinite(commanded_speed) ? commanded_speed : direction_speed;
                         }
+                    } else if (std::abs(ang_vel_z) > 0.01f) {
+                        // Yaw-only ROS2 command: keep the planner active so facing_direction changes
+                        // can produce in-place heading updates. The planner model falls back to
+                        // facing_direction when movement_direction is near zero.
+                        final_mode = static_cast<int>(LocomotionMode::SLOW_WALK);
+                        final_movement = {0.0f, 0.0f, 0.0f};
+                        final_speed = 0.0f;
                     } else {
-                        // No movement: idle
+                        // No movement and no heading update: idle
                         final_mode = static_cast<int>(LocomotionMode::IDLE);
                         final_movement = {0.0f, 0.0f, 0.0f};
                         final_speed = -1.0f;

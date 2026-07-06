@@ -1,0 +1,18 @@
+publish_rate: 25.0
+command_timeout: 0.35
+locomotion_mode: 0
+base_height: 0.78
+upper_body_mode: navigation
+limits:
+  max_v: 0.65
+  max_w: 0.85
+  max_dv: 0.08
+  max_dw: 0.12
+  v_deadband: 0.025
+  w_deadband: 0.03
+topics:
+  cmd_vel: /cmd_vel_nav
+  sonic_payload: ControlPolicy/upper_body_pose
+  safe_cmd_vel: /sonic_nav/cmd_vel_safe
+  diagnostics: /sonic_nav/diagnostics
+  mode: /sonic_nav/upper_body_mode

@@ -12,6 +12,8 @@ Based on [NVIDIA GR00T Whole-Body Control](https://github.com/NVlabs/GR00T-Whole
 # Terminal 1 — One-click launch
 python scripts/start.py          # basic go-to-point
 python scripts/start_mppi.py     # MPPI collision avoidance
+python scripts/start_dwa.py      # DWA local planner
+python scripts/start_box_demo.py box_demo  # table-top box grasp demo
 
 # Terminal 2 — RViz
 bash scripts/rviz.sh
@@ -25,22 +27,69 @@ Click **2D Goal Pose** in RViz to navigate. Ctrl+C to stop.
 |------|--------|-------------|
 | Go-to-Point | `start.py` | Smooth turning, proportional control |
 | MPPI Nav | `start_mppi.py` | GPU trajectory sampling + collision avoidance |
+| DWA Nav | `start_dwa.py` | Dynamic window local planning |
+| Box Demo | `start_box_demo.py` | Vision-anchor table approach + upper-body contact grasp |
 | Keyboard | `keyboard_control.py` | WASD manual control |
 
 ## Scenes
 
 ```bash
 bash scripts/switch_scene.sh <name>
+bash scripts/switch_scene.sh --list
+python scripts/start.py indoor               # launch directly in the indoor scene
+python scripts/start.py robocasa_kitchen     # launch the RoboCasa kitchen scene
+python scripts/start_mppi.py robocasa_galley # launch MPPI in a tight kitchen scene
+python scripts/start_dwa.py robocasa_cafe    # launch DWA in the cafe scene
 ```
 
 | Scene | Description |
 |-------|-------------|
 | `default` | 8m×8m room, cylinder obstacles |
+| `box_demo` | Table-top lightweight box grasp demo scene |
 | `dynamic` | Moving obstacles (sliding + rotating) |
 | `stairs` | 10-step staircase + ramp |
 | `uneven` | Bumpy terrain + rocks |
+| `table` | Table and small-object interaction area |
+| `indoor` | Detailed office/lab indoor navigation floor |
+| `robocasa_kitchen` | Doorless 14m x 9m RoboCasa-style kitchen/living scene with real fixture meshes |
+| `robocasa_galley` | Narrow dual-counter RoboCasa kitchen for tight-lane navigation |
+| `robocasa_apartment` | Multi-zone apartment with partial walls, doorways, kitchen, dining, and living areas |
+| `robocasa_cafe` | Small cafe with counter, stools, tables, queue posts, and display fridge |
 
 Restart sim after switching.
+
+## Box Grasp Demo
+
+The box demo is a lightweight VLM-ready interaction pipeline: the simulator publishes a known box anchor in map/base/camera frames, the robot walks to the table using the anchor distance, then upper-body WBC/IK tracks the box and performs a contact grasp.
+
+```bash
+python scripts/start_box_demo.py box_demo
+```
+
+By default, the demo does **not** use the old visible box suction helper. The terminal should print:
+
+```text
+box attach assist disabled; using contact/friction grasp only
+```
+
+Useful options:
+
+```bash
+python scripts/start_box_demo.py box_demo --box-attach          # explicit debug fallback
+python scripts/start_box_demo.py box_demo --no-hold             # exit after the sequence
+python scripts/start_box_demo.py box_demo --no-box-anchor       # run fixed-pose fallback
+```
+
+Key topics:
+
+| Topic | Type | Description |
+|-------|------|-------------|
+| `/sonic_demo/box_anchor` | `std_msgs/String` | JSON anchor with box pose, size, camera point, and grasp plan |
+| `/sonic_demo/box_pose` | `geometry_msgs/PoseStamped` | Box center in map frame |
+| `/sonic_demo/box_grasp_base_pose` | `geometry_msgs/PoseStamped` | Suggested base target near the table |
+| `/sonic_demo/phase` | `std_msgs/String` | Current demo phase for RViz/debugging |
+
+During grasp, `box_grasp_demo.py` retries approach until the box is close enough, filters implausible startup anchors, checks whether the box has lifted, and then tightens the hands with a small `squeeze_box_secure` phase.
 
 ## Installation
 
@@ -81,7 +130,10 @@ MuJoCo Sim ──DDS──► C++ Deploy ◄──ROS2── Goal Follower ◄�
     └── qpos.npy ──► Sensor Bridge ──► /odom /tf
                      Mid360 Pub ────► /mid360_points
                      Camera Pub ────► /camera/*
+                     Box Anchor ────► /sonic_demo/box_anchor
 ```
+
+Navigation parameters live in `configs/nav/*.yaml`. The scripts load these YAML defaults and still allow selected `SONIC_*` environment overrides for quick experiments.
 
 ## ROS2 Topics
 
@@ -92,6 +144,8 @@ MuJoCo Sim ──DDS──► C++ Deploy ◄──ROS2── Goal Follower ◄�
 | `/mid360_points` | `sensor_msgs/PointCloud2` | mid360_pub.py |
 | `/camera/color/image_raw` | `sensor_msgs/Image` | camera_pub.py |
 | `/camera/depth/image_raw` | `sensor_msgs/Image` | camera_pub.py |
+| `/sonic_demo/box_anchor` | `std_msgs/String` | box_anchor_pub.py |
+| `/sonic_demo/phase` | `std_msgs/String` | box_grasp_demo.py |
 | `/goal_pose` | `geometry_msgs/PoseStamped` | RViz |
 | `ControlPolicy/upper_body_pose` | `std_msgs/ByteMultiArray` | goal_follower.py |
 
@@ -109,8 +163,13 @@ MuJoCo Sim ──DDS──► C++ Deploy ◄──ROS2── Goal Follower ◄�
 scripts/
 ├── start.py              # One-click: sim + deploy + sensors + nav
 ├── start_mppi.py         # One-click: MPPI navigation variant
+├── start_dwa.py          # One-click: DWA navigation variant
+├── start_box_demo.py     # One-click: table-top box grasp demo
 ├── goal_follower.py      # Go-to-point navigation (odom feedback)
 ├── mppi_nav.py           # MPPI navigation (GPU trajectory sampling)
+├── dwa_nav.py            # DWA navigation (local dynamic window search)
+├── box_anchor_pub.py     # Publishes known box pose/grasp anchors
+├── box_grasp_demo.py     # ZMQ planner sequence for box approach and grasp
 ├── sensor_pub.py         # /odom /tf publisher
 ├── mid360_pub.py         # Livox Mid-360 point cloud simulator
 ├── camera_pub.py         # RealSense RGB-D camera simulator

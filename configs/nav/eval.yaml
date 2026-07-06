@@ -1,0 +1,12 @@
+goal_tolerance: 0.45
+collision_radius: 0.18
+stuck_speed: 0.035
+stuck_cmd: 0.08
+stuck_timeout: 3.0
+summary_dir: logs/nav_metrics
+topics:
+  odom: /odom
+  goal: /goal_pose
+  cmd_vel: /sonic_nav/cmd_vel_safe
+  local_costmap: /local_costmap
+  summary: /sonic_nav/metrics_summary

@@ -155,6 +155,7 @@ cython_debug/
 
 # log
 outputs/
+logs/
 
 # Ruff stuff:
 .ruff_cache/
@@ -208,6 +209,17 @@ teleop_vids/
 *.code-workspace
 # Motion/training data (large local datasets, not tracked in git)
 data/
+!gear_sonic/data/
+!gear_sonic/data/robot_model/
+!gear_sonic/data/robot_model/model_data/
+!gear_sonic/data/robot_model/model_data/g1/
+!gear_sonic/data/robot_model/model_data/g1/scene_indoor.xml
+!gear_sonic/data/robot_model/model_data/g1/textures/
+!gear_sonic/data/robot_model/model_data/g1/textures/polyhaven_*.jpg
+!gear_sonic/data/robot_model/model_data/g1/textures/polyhaven_*.png
+!gear_sonic/data/robot_model/model_data/g1/meshes/
+!gear_sonic/data/robot_model/model_data/g1/meshes/indoor/
+!gear_sonic/data/robot_model/model_data/g1/meshes/indoor/**
 bones_seed_smpl/
 sonic_release/
 # Training output logs

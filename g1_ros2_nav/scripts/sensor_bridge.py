@@ -8,7 +8,9 @@ from tf2_ros import TransformBroadcaster
 from std_msgs.msg import Header
 
 REPO = os.path.expanduser("~/GR00T-WholeBodyControl")
+sys.path.insert(0, REPO)
 sys.path.insert(0, os.path.join(REPO, "g1_ros2_nav"))
+from gear_sonic.utils.mujoco_sim.scene_registry import resolve_scene
 from g1_ros2_nav.lidar_sim import LidarSim
 
 os.environ.setdefault("RMW_IMPLEMENTATION", "rmw_fastrtps_cpp")
@@ -19,7 +21,8 @@ os.environ.setdefault("ROS_DOMAIN_ID", "42")
 class SensorBridge(Node):
     def __init__(self):
         super().__init__("sensor_bridge")
-        xml = os.path.join(REPO, "gear_sonic/data/robot_model/model_data/g1/scene_43dof.xml")
+        scene_arg = os.environ.get("SONIC_SCENE", sys.argv[1] if len(sys.argv) > 1 else "default")
+        xml = str(resolve_scene(scene_arg, repo_root=REPO).abs_path)
         self._model = mujoco.MjModel.from_xml_path(xml)
         self._data = mujoco.MjData(self._model)
         self._lidar = LidarSim(self._model, self._data)

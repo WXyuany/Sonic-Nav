@@ -1,0 +1,160 @@
+<mujoco model="g1_robocasa_cafe_navigation">
+  <include file="g1_29dof_with_hand.xml"/>
+
+  <statistic center="0 0 0.7" extent="12.5"/>
+
+  <visual>
+    <headlight diffuse="0.54 0.52 0.50" ambient="0.35 0.34 0.32" specular="0.1 0.1 0.1"/>
+    <rgba haze="0.12 0.12 0.13 1"/>
+    <global azimuth="-132" elevation="-20" offwidth="1280" offheight="960"/>
+  </visual>
+
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.78 0.84 0.88" rgb2="0.08 0.09 0.10" width="512" height="3072"/>
+    <texture type="2d" name="floor_tile" file="textures/polyhaven_interior_tiles_diff_1k.png"/>
+    <texture type="2d" name="painted_plaster" file="textures/polyhaven_painted_plaster_wall_diff_1k.png"/>
+    <texture type="2d" name="real_wood" file="textures/polyhaven_raw_plank_wall_diff_1k.png"/>
+    <texture type="2d" name="rug_pattern" builtin="checker" mark="none" rgb1="0.24 0.31 0.33" rgb2="0.30 0.38 0.40" width="256" height="256"/>
+
+    <mesh name="dining_table_visual" file="indoor/dining_table_visual.obj"/>
+    <mesh name="dining_chair_visual" file="indoor/dining_chair_visual.obj"/>
+    <mesh name="sofa_visual" file="indoor/sofa_visual.obj"/>
+    <mesh name="rc_stool_body" file="robocasa/stool009/Stool009.obj"/>
+    <mesh name="rc_stool_prop" file="robocasa/stool009/Prop.obj"/>
+    <mesh name="rc_fruit_bowl" file="robocasa/fruitbowl021/FruitBowl021.obj"/>
+    <mesh name="rc_fruit_bowl_prop" file="robocasa/fruitbowl021/Prop.obj"/>
+    <mesh name="rc_coffee_body" file="robocasa/coffeemachine067/Body001.obj"/>
+    <mesh name="rc_coffee_button_1" file="robocasa/coffeemachine067/Button001.obj"/>
+    <mesh name="rc_coffee_button_2" file="robocasa/coffeemachine067/Button002.obj"/>
+    <mesh name="rc_coffee_lid_1" file="robocasa/coffeemachine067/Lid001.obj"/>
+    <mesh name="rc_coffee_lid_2" file="robocasa/coffeemachine067/Lid002.obj"/>
+    <mesh name="rc_coffee_lid_3" file="robocasa/coffeemachine067/Lid003.obj"/>
+    <mesh name="rc_coffee_lever" file="robocasa/coffeemachine067/Lever001.obj"/>
+    <mesh name="rc_fridge_body" file="robocasa/fridge_refrigerator068/Body001.obj"/>
+    <mesh name="rc_fridge_clear" file="robocasa/fridge_refrigerator068/Body001_Clear.obj"/>
+
+    <material name="floor_mat" texture="floor_tile" texuniform="true" texrepeat="6 5" reflectance="0.10"/>
+    <material name="wall_mat" texture="painted_plaster" texuniform="true" texrepeat="3 2" rgba="0.92 0.90 0.84 1" reflectance="0.04"/>
+    <material name="rug_mat" texture="rug_pattern" texuniform="true" texrepeat="4 3" reflectance="0.04"/>
+    <material name="wood_mat" texture="real_wood" texuniform="true" texrepeat="2 1" reflectance="0.08"/>
+    <material name="cabinet_mat" rgba="0.23 0.26 0.27 1"/>
+    <material name="countertop_mat" rgba="0.66 0.64 0.58 1" reflectance="0.14"/>
+    <material name="metal_mat" rgba="0.56 0.58 0.58 1" reflectance="0.18"/>
+    <material name="black_glass_mat" rgba="0.03 0.04 0.045 1" reflectance="0.22"/>
+    <material name="glass_mat" rgba="0.55 0.75 0.82 0.35"/>
+    <material name="fabric_mat" rgba="0.20 0.24 0.28 1"/>
+    <material name="stool_mat" rgba="0.15 0.15 0.14 1"/>
+    <material name="fruit_mat" rgba="0.95 0.52 0.18 1"/>
+    <material name="paper_mat" rgba="0.92 0.90 0.82 1"/>
+    <material name="plant_mat" rgba="0.12 0.42 0.18 1"/>
+    <material name="warning_mat" rgba="0.94 0.62 0.14 1"/>
+  </asset>
+
+  <worldbody>
+    <light name="ceiling_key" pos="0 0 5.4" dir="0 0 -1" directional="true" diffuse="0.55 0.53 0.50"/>
+    <light name="bar_task_light" pos="0 3.55 2.9" dir="0 0 -1" diffuse="0.44 0.40 0.34"/>
+    <light name="table_task_light" pos="-3.5 -1.2 2.7" dir="0 0 -1" diffuse="0.35 0.34 0.31"/>
+    <light name="window_light" pos="5.2 -0.8 2.6" dir="-1 0 -0.4" diffuse="0.32 0.34 0.36"/>
+
+    <geom name="floor" type="plane" size="0 0 0.05" material="floor_mat" friction="1.1 0.02 0.001"/>
+    <site name="com_marker" pos="0.1 0 0" size="0.05" rgba="1 0 0 1" type="sphere"/>
+
+    <geom name="wall_north" type="box" size="6.20 0.06 1.32" pos="0 4.20 1.32" material="wall_mat"/>
+    <geom name="wall_south" type="box" size="6.20 0.06 1.32" pos="0 -4.20 1.32" material="wall_mat"/>
+    <geom name="wall_east" type="box" size="0.06 4.20 1.32" pos="6.20 0 1.32" material="wall_mat"/>
+    <geom name="wall_west" type="box" size="0.06 4.20 1.32" pos="-6.20 0 1.32" material="wall_mat"/>
+    <site name="window_east_1" type="box" size="0.025 0.82 0.56" pos="6.12 1.45 1.48" material="glass_mat"/>
+    <site name="window_east_2" type="box" size="0.025 0.82 0.56" pos="6.12 -0.65 1.48" material="glass_mat"/>
+
+    <!-- Long service counter with enough collision for lidar but rich visual detail. -->
+    <geom name="service_counter_left" type="box" size="1.45 0.45 0.48" pos="-2.30 3.50 0.48" material="cabinet_mat"/>
+    <geom name="service_counter_mid" type="box" size="1.45 0.45 0.48" pos="0.70 3.50 0.48" material="cabinet_mat"/>
+    <geom name="service_counter_right" type="box" size="0.88 0.45 0.48" pos="3.05 3.50 0.48" material="cabinet_mat"/>
+    <site name="service_counter_top_a" type="box" size="1.50 0.50 0.045" pos="-2.30 3.50 0.98" material="countertop_mat"/>
+    <site name="service_counter_top_b" type="box" size="1.50 0.50 0.045" pos="0.70 3.50 0.98" material="countertop_mat"/>
+    <site name="service_counter_top_c" type="box" size="0.92 0.50 0.045" pos="3.05 3.50 0.98" material="countertop_mat"/>
+    <body name="bar_coffee_machine" pos="-0.60 3.48 1.08" euler="0 0 3.1416">
+      <geom name="bar_coffee_machine_visual" type="mesh" mesh="rc_coffee_body" material="black_glass_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="bar_coffee_button_1" type="mesh" mesh="rc_coffee_button_1" material="metal_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="bar_coffee_button_2" type="mesh" mesh="rc_coffee_button_2" material="metal_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="bar_coffee_lid_1" type="mesh" mesh="rc_coffee_lid_1" material="metal_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="bar_coffee_lid_2" type="mesh" mesh="rc_coffee_lid_2" material="metal_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="bar_coffee_lid_3" type="mesh" mesh="rc_coffee_lid_3" material="metal_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="bar_coffee_lever" type="mesh" mesh="rc_coffee_lever" material="metal_mat" contype="0" conaffinity="0" group="1" density="0"/>
+    </body>
+    <body name="bar_display_fridge" pos="4.85 3.55 0.92" euler="0 0 3.1416">
+      <geom name="bar_display_fridge_visual" type="mesh" mesh="rc_fridge_body" material="metal_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="bar_display_fridge_clear" type="mesh" mesh="rc_fridge_clear" material="glass_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="bar_display_fridge_collision" type="box" size="0.48 0.38 0.92" material="metal_mat"/>
+    </body>
+    <body name="bar_fruit_bowl" pos="1.15 3.42 1.08" euler="0 0 0.15">
+      <geom name="bar_fruit_bowl_visual" type="mesh" mesh="rc_fruit_bowl" material="metal_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="bar_fruit_bowl_prop" type="mesh" mesh="rc_fruit_bowl_prop" material="fruit_mat" contype="0" conaffinity="0" group="1" density="0"/>
+    </body>
+
+    <body name="counter_stool_a" pos="-2.75 2.48 0.42" euler="0 0 0.05">
+      <geom name="counter_stool_a_visual" type="mesh" mesh="rc_stool_body" material="stool_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="counter_stool_a_prop" type="mesh" mesh="rc_stool_prop" material="stool_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="counter_stool_a_collision" type="cylinder" size="0.25 0.42" material="stool_mat"/>
+    </body>
+    <body name="counter_stool_b" pos="-1.65 2.45 0.42" euler="0 0 -0.10">
+      <geom name="counter_stool_b_visual" type="mesh" mesh="rc_stool_body" material="stool_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="counter_stool_b_prop" type="mesh" mesh="rc_stool_prop" material="stool_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="counter_stool_b_collision" type="cylinder" size="0.25 0.42" material="stool_mat"/>
+    </body>
+    <body name="counter_stool_c" pos="-0.45 2.45 0.42" euler="0 0 0.16">
+      <geom name="counter_stool_c_visual" type="mesh" mesh="rc_stool_body" material="stool_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="counter_stool_c_prop" type="mesh" mesh="rc_stool_prop" material="stool_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="counter_stool_c_collision" type="cylinder" size="0.25 0.42" material="stool_mat"/>
+    </body>
+    <body name="counter_stool_d" pos="0.75 2.48 0.42" euler="0 0 -0.12">
+      <geom name="counter_stool_d_visual" type="mesh" mesh="rc_stool_body" material="stool_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="counter_stool_d_prop" type="mesh" mesh="rc_stool_prop" material="stool_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="counter_stool_d_collision" type="cylinder" size="0.25 0.42" material="stool_mat"/>
+    </body>
+
+    <!-- Customer area with circular obstacle patterns and clear approach lanes. -->
+    <site name="table_zone_rug" type="box" size="3.15 2.25 0.012" pos="-2.30 -1.25 0.015" material="rug_mat"/>
+    <geom name="round_table_left_top" type="cylinder" size="0.48 0.04" pos="-3.75 -1.05 0.72" material="wood_mat"/>
+    <geom name="round_table_left_base" type="cylinder" size="0.12 0.34" pos="-3.75 -1.05 0.34" material="metal_mat"/>
+    <geom name="round_table_right_top" type="cylinder" size="0.48 0.04" pos="-1.15 -1.35 0.72" material="wood_mat"/>
+    <geom name="round_table_right_base" type="cylinder" size="0.12 0.34" pos="-1.15 -1.35 0.34" material="metal_mat"/>
+    <body name="cafe_chair_1" pos="-4.45 -1.05 0" euler="0 0 -1.5708">
+      <geom name="cafe_chair_1_visual" type="mesh" mesh="dining_chair_visual" material="fabric_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="cafe_chair_1_collision" type="box" size="0.27 0.30 0.48" pos="0 0 0.48" material="fabric_mat"/>
+    </body>
+    <body name="cafe_chair_2" pos="-3.05 -1.05 0" euler="0 0 1.5708">
+      <geom name="cafe_chair_2_visual" type="mesh" mesh="dining_chair_visual" material="fabric_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="cafe_chair_2_collision" type="box" size="0.27 0.30 0.48" pos="0 0 0.48" material="fabric_mat"/>
+    </body>
+    <body name="cafe_chair_3" pos="-1.85 -2.00 0" euler="0 0 3.1416">
+      <geom name="cafe_chair_3_visual" type="mesh" mesh="dining_chair_visual" material="fabric_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="cafe_chair_3_collision" type="box" size="0.27 0.30 0.48" pos="0 0 0.48" material="fabric_mat"/>
+    </body>
+    <body name="cafe_chair_4" pos="-0.45 -0.80 0">
+      <geom name="cafe_chair_4_visual" type="mesh" mesh="dining_chair_visual" material="fabric_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="cafe_chair_4_collision" type="box" size="0.27 0.30 0.48" pos="0 0 0.48" material="fabric_mat"/>
+    </body>
+
+    <geom name="queue_post_1" type="cylinder" size="0.055 0.45" pos="2.00 0.95 0.45" material="metal_mat"/>
+    <geom name="queue_post_2" type="cylinder" size="0.055 0.45" pos="3.10 0.95 0.45" material="metal_mat"/>
+    <geom name="queue_post_3" type="cylinder" size="0.055 0.45" pos="2.00 -0.15 0.45" material="metal_mat"/>
+    <geom name="queue_post_4" type="cylinder" size="0.055 0.45" pos="3.10 -0.15 0.45" material="metal_mat"/>
+    <site name="queue_belt_1" type="box" size="0.55 0.025 0.035" pos="2.55 0.95 0.82" material="warning_mat"/>
+    <site name="queue_belt_2" type="box" size="0.55 0.025 0.035" pos="2.55 -0.15 0.82" material="warning_mat"/>
+
+    <body name="window_sofa" pos="4.65 -2.45 0" euler="0 0 1.5708">
+      <geom name="window_sofa_visual" type="mesh" mesh="sofa_visual" material="fabric_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="window_sofa_collision" type="box" size="1.00 0.40 0.42" pos="0 0 0.42" material="fabric_mat"/>
+    </body>
+    <geom name="low_menu_stand" type="box" size="0.28 0.18 0.54" pos="1.38 1.62 0.54" euler="0 0 0.18" material="black_glass_mat"/>
+    <site name="menu_sheet" type="box" size="0.22 0.012 0.32" pos="1.38 1.40 0.76" euler="0 0 0.18" material="paper_mat"/>
+    <geom name="plant_pot_cafe" type="cylinder" size="0.18 0.22" pos="-5.35 3.35 0.22" material="cabinet_mat"/>
+    <site name="plant_leaf_cafe_1" type="ellipsoid" size="0.10 0.04 0.22" pos="-5.42 3.35 0.55" euler="0.4 0.1 0.8" material="plant_mat"/>
+    <site name="plant_leaf_cafe_2" type="ellipsoid" size="0.10 0.04 0.24" pos="-5.27 3.37 0.58" euler="-0.3 0.2 -0.7" material="plant_mat"/>
+  </worldbody>
+
+  <default>
+    <geom friction="1.0 0.02 0.001" solimp="0.95 0.99 0.001" solref="0.005 1"/>
+  </default>
+</mujoco>

@@ -305,8 +305,12 @@ if [ -d "/opt/onnxruntime/lib" ]; then
     export LD_LIBRARY_PATH="/opt/onnxruntime/lib:$LD_LIBRARY_PATH"
 fi
 
-# Set up Git LFS (if not already done)
-if command -v git-lfs &> /dev/null; then
+# Set up Git LFS (if not already done). Runtime launchers set
+# SONIC_SKIP_LFS_PULL=1 because blocking on network LFS here prevents the
+# controller process from starting.
+if [ "${SONIC_SKIP_LFS_PULL:-0}" = "1" ]; then
+    echo "⏭️  Skipping Git LFS pull (SONIC_SKIP_LFS_PULL=1)"
+elif command -v git-lfs &> /dev/null; then
     git lfs install &> /dev/null
     echo "✅ Git LFS configured"
     
@@ -348,4 +352,3 @@ echo ""
 if [ -n "$BASH_VERSION" ]; then
     export PS1="(g1_deploy) $PS1"
 fi
-

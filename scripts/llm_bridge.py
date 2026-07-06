@@ -12,6 +12,12 @@ from std_msgs.msg import ByteMultiArray
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 ACTION_HISTORY = []
+LIDAR_OFFSET = np.array([-0.0039635, 0.0], dtype=np.float32)
+NEUTRAL_WRIST_POSE = [
+    0.0903, 0.1615, -0.2411, 0.7295, 0.3145, 0.5533, -0.2506,
+    0.1280, -0.1522, -0.2461, 0.7320, -0.2639, 0.5395, 0.3217,
+]
+NEUTRAL_HAND_JOINTS = [0.0] * 7
 
 
 def _call_llm(scene_text, history_text):
@@ -32,7 +38,8 @@ class SceneDescriber:
             self.obs_count = len(pts)
             dists = np.linalg.norm(pts - [rx, ry], axis=1)
             self.min_obs_dist = float(dists.min())
-            front_mask = np.abs(np.arctan2(pts[:,1]-ry, pts[:,0]-rx) - ryaw) < 0.5
+            diff = np.arctan2(pts[:,1]-ry, pts[:,0]-rx) - ryaw
+            front_mask = np.abs(np.arctan2(np.sin(diff), np.cos(diff))) < 0.5
             self.obs_front = float(dists[front_mask].min()) if front_mask.any() else 999
         else:
             self.obs_count = 0; self.min_obs_dist = 999; self.obs_front = 999
@@ -65,8 +72,14 @@ class LLMBridge(Node):
         self.get_logger().info('LLM Brain ready')
 
     def on_cloud(self, m):
+        if m.point_step != 12 or len(m.fields) < 3:
+            self.get_logger().warn('Unsupported PointCloud2 layout; expected packed float32 xyz')
+            return
         buf = np.frombuffer(m.data, dtype=np.float32).reshape(-1, 3)
-        pts = buf[(np.abs(buf[:,0])<30)&(np.abs(buf[:,1])<30)][:,:2].astype(np.float32)
+        pts = buf[(np.abs(buf[:,0])<40)&(np.abs(buf[:,1])<40)][:,:2].astype(np.float32)
+        c, s = math.cos(self.ryaw), math.sin(self.ryaw)
+        rot = np.array([[c, -s], [s, c]], dtype=np.float32)
+        pts = (pts + LIDAR_OFFSET) @ rot.T + np.array([self.rx, self.ry], dtype=np.float32)
         self.scene.update(pts, self.rx, self.ry, self.ryaw)
 
     def on_odom(self, m):
@@ -99,7 +112,10 @@ class LLMBridge(Node):
     def tick(self):
         act = self.current_action
         pl = {'toggle_policy_action': False, 'locomotion_mode': 0,
-              'base_height_command': 0.78, 'navigate_cmd': [0, 0, 0]}
+              'base_height_command': 0.78, 'navigate_cmd': [0, 0, 0],
+              'wrist_pose': list(NEUTRAL_WRIST_POSE),
+              'left_hand_joint': NEUTRAL_HAND_JOINTS,
+              'right_hand_joint': NEUTRAL_HAND_JOINTS}
         p = act.get('params', {})
 
         if act['action'] == 'navigate':
@@ -142,7 +158,11 @@ class LLMBridge(Node):
         elif act['action'] == 'reach':
             hand = p.get('hand', 'right')
             target = p.get('position', [0.2, 0.15, 0.8])
-            wrist = target + [1,0,0,0] if hand == 'right' else [0,0,0,1,0,0,0]
+            wrist = list(NEUTRAL_WRIST_POSE)
+            if hand == 'left':
+                wrist[0:7] = target + [1, 0, 0, 0]
+            else:
+                wrist[7:14] = target + [1, 0, 0, 0]
             pl['wrist_pose'] = wrist
 
         elif act['action'] == 'stop':

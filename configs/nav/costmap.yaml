@@ -1,0 +1,20 @@
+resolution: 0.06
+forward_range: 6.0
+backward_range: 1.2
+lateral_range: 3.2
+obstacle_radius: 0.05
+inflation_radius: 0.36
+occupied_threshold: 35
+cloud_filter:
+  robot_radius: 0.42
+  max_range: 7.0
+  min_z: -0.55
+  max_z: 0.85
+  voxel: 0.08
+  max_points: 1400
+  min_x: -1.2
+topics:
+  input_cloud: /mid360_points
+  local_costmap: /local_costmap
+  inflated_points: /local_costmap/occupied_points
+  diagnostics: /sonic_nav/costmap_status

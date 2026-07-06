@@ -1,0 +1,164 @@
+<mujoco model="g1_robocasa_apartment_navigation">
+  <include file="g1_29dof_with_hand.xml"/>
+
+  <statistic center="0 0 0.7" extent="14.0"/>
+
+  <visual>
+    <headlight diffuse="0.54 0.54 0.52" ambient="0.35 0.35 0.34" specular="0.1 0.1 0.1"/>
+    <rgba haze="0.11 0.12 0.13 1"/>
+    <global azimuth="-135" elevation="-20" offwidth="1280" offheight="960"/>
+  </visual>
+
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.78 0.86 0.90" rgb2="0.08 0.09 0.10" width="512" height="3072"/>
+    <texture type="2d" name="floor_tile" file="textures/polyhaven_interior_tiles_diff_1k.png"/>
+    <texture type="2d" name="painted_plaster" file="textures/polyhaven_painted_plaster_wall_diff_1k.png"/>
+    <texture type="2d" name="real_wood" file="textures/polyhaven_raw_plank_wall_diff_1k.png"/>
+    <texture type="2d" name="armchair_fabric" file="textures/polyhaven_armchair_01_diff_1k.png"/>
+    <texture type="2d" name="rug_pattern" builtin="checker" mark="none" rgb1="0.22 0.30 0.34" rgb2="0.28 0.38 0.42" width="256" height="256"/>
+
+    <mesh name="armchair_01_visual" file="indoor/armchair_01/armchair_01_visual.obj"/>
+    <mesh name="kitchen_cabinet_visual" file="indoor/kitchen_cabinet_visual.obj"/>
+    <mesh name="kitchen_island_visual" file="indoor/kitchen_island_visual.obj"/>
+    <mesh name="dining_table_visual" file="indoor/dining_table_visual.obj"/>
+    <mesh name="dining_chair_visual" file="indoor/dining_chair_visual.obj"/>
+    <mesh name="sofa_visual" file="indoor/sofa_visual.obj"/>
+    <mesh name="rc_sink_body" file="robocasa/sink025/Body001.obj"/>
+    <mesh name="rc_sink_handle" file="robocasa/sink025/handle.obj"/>
+    <mesh name="rc_sink_spout" file="robocasa/sink025/spout.obj"/>
+    <mesh name="rc_stove_body" file="robocasa/stove074/Body001.obj"/>
+    <mesh name="rc_stove_panel" file="robocasa/stove074/door.obj"/>
+    <mesh name="rc_hood_body" file="robocasa/rangehood006/Body001.obj"/>
+    <mesh name="rc_fridge_body" file="robocasa/fridge_refrigerator068/Body001.obj"/>
+    <mesh name="rc_fridge_clear" file="robocasa/fridge_refrigerator068/Body001_Clear.obj"/>
+    <mesh name="rc_fruit_bowl" file="robocasa/fruitbowl021/FruitBowl021.obj"/>
+    <mesh name="rc_fruit_bowl_prop" file="robocasa/fruitbowl021/Prop.obj"/>
+
+    <material name="floor_mat" texture="floor_tile" texuniform="true" texrepeat="7 5" reflectance="0.10"/>
+    <material name="wall_mat" texture="painted_plaster" texuniform="true" texrepeat="3 2" rgba="0.92 0.90 0.84 1" reflectance="0.04"/>
+    <material name="accent_wall_mat" rgba="0.35 0.48 0.52 1"/>
+    <material name="rug_mat" texture="rug_pattern" texuniform="true" texrepeat="4 3" reflectance="0.04"/>
+    <material name="trim_mat" rgba="0.88 0.86 0.80 1"/>
+    <material name="wood_mat" texture="real_wood" texuniform="true" texrepeat="2 1" reflectance="0.08"/>
+    <material name="cabinet_mat" rgba="0.24 0.27 0.28 1"/>
+    <material name="countertop_mat" rgba="0.67 0.65 0.60 1" reflectance="0.14"/>
+    <material name="metal_mat" rgba="0.56 0.58 0.58 1" reflectance="0.18"/>
+    <material name="black_glass_mat" rgba="0.03 0.04 0.045 1" reflectance="0.22"/>
+    <material name="glass_mat" rgba="0.55 0.75 0.82 0.35"/>
+    <material name="fabric_mat" rgba="0.20 0.24 0.28 1"/>
+    <material name="armchair_mat" texture="armchair_fabric" texuniform="true" reflectance="0.08"/>
+    <material name="paper_mat" rgba="0.92 0.90 0.82 1"/>
+    <material name="book_blue_mat" rgba="0.10 0.20 0.44 1"/>
+    <material name="book_red_mat" rgba="0.50 0.12 0.10 1"/>
+    <material name="plant_mat" rgba="0.12 0.42 0.18 1"/>
+    <material name="box_mat" rgba="0.42 0.28 0.16 1"/>
+    <material name="fruit_mat" rgba="0.95 0.52 0.18 1"/>
+  </asset>
+
+  <worldbody>
+    <light name="ceiling_main" pos="0 0 5.6" dir="0 0 -1" directional="true" diffuse="0.56 0.55 0.52"/>
+    <light name="kitchen_task" pos="-3.8 3.6 2.8" dir="0 0 -1" diffuse="0.42 0.40 0.35"/>
+    <light name="living_task" pos="3.8 -1.7 2.8" dir="0 0 -1" diffuse="0.36 0.35 0.32"/>
+    <light name="entry_light" pos="-2.2 0.0 2.6" dir="0 0 -1" diffuse="0.32 0.32 0.30"/>
+
+    <geom name="floor" type="plane" size="0 0 0.05" material="floor_mat" friction="1.1 0.02 0.001"/>
+    <site name="com_marker" pos="0.1 0 0" size="0.05" rgba="1 0 0 1" type="sphere"/>
+
+    <geom name="wall_north" type="box" size="7.00 0.06 1.35" pos="0 4.75 1.35" material="wall_mat"/>
+    <geom name="wall_south" type="box" size="7.00 0.06 1.35" pos="0 -4.75 1.35" material="wall_mat"/>
+    <geom name="wall_east" type="box" size="0.06 4.75 1.35" pos="7.00 0 1.35" material="wall_mat"/>
+    <geom name="wall_west" type="box" size="0.06 4.75 1.35" pos="-7.00 0 1.35" material="wall_mat"/>
+    <site name="baseboard_north" type="box" size="6.85 0.025 0.055" pos="0 4.67 0.12" material="trim_mat"/>
+    <site name="baseboard_south" type="box" size="6.85 0.025 0.055" pos="0 -4.67 0.12" material="trim_mat"/>
+    <site name="baseboard_east" type="box" size="0.025 4.60 0.055" pos="6.92 0 0.12" material="trim_mat"/>
+    <site name="baseboard_west" type="box" size="0.025 4.60 0.055" pos="-6.92 0 0.12" material="trim_mat"/>
+
+    <!-- Interior walls leave 1.6m to 2.0m doorways for humanoid navigation. -->
+    <geom name="entry_wall_north" type="box" size="2.00 0.055 1.20" pos="-4.70 1.25 1.20" material="accent_wall_mat"/>
+    <geom name="entry_wall_south" type="box" size="1.65 0.055 1.20" pos="-4.35 -1.25 1.20" material="accent_wall_mat"/>
+    <geom name="kitchen_living_partition" type="box" size="0.055 1.45 1.20" pos="-1.10 3.00 1.20" material="wall_mat"/>
+    <geom name="dining_partition" type="box" size="0.055 1.20 1.20" pos="-1.10 -3.00 1.20" material="wall_mat"/>
+    <geom name="short_half_wall" type="box" size="0.85 0.055 0.62" pos="0.15 1.28 0.62" material="wall_mat"/>
+
+    <!-- Kitchen zone, north-west. -->
+    <site name="kitchen_tile_zone" type="box" size="2.85 1.25 0.012" pos="-4.00 3.18 0.015" material="rug_mat"/>
+    <body name="kitchen_sink_run" pos="-4.95 4.24 0">
+      <geom name="kitchen_sink_run_collision" type="box" size="1.18 0.34 0.46" pos="0 0 0.46" material="cabinet_mat"/>
+      <site name="kitchen_sink_run_top" type="box" size="1.22 0.37 0.04" pos="0 0 0.94" material="countertop_mat"/>
+      <geom name="apartment_sink_body" type="mesh" mesh="rc_sink_body" pos="0.10 -0.03 1.00" euler="0 0 3.1416" material="metal_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="apartment_sink_handle" type="mesh" mesh="rc_sink_handle" pos="0.10 -0.03 1.00" euler="0 0 3.1416" material="metal_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="apartment_sink_spout" type="mesh" mesh="rc_sink_spout" pos="0.10 -0.03 1.00" euler="0 0 3.1416" material="metal_mat" contype="0" conaffinity="0" group="1" density="0"/>
+    </body>
+    <body name="kitchen_stove_run" pos="-3.48 4.24 0.92">
+      <geom name="apartment_stove_body" type="mesh" mesh="rc_stove_body" euler="0 0 3.1416" material="metal_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="apartment_stove_panel" type="mesh" mesh="rc_stove_panel" euler="0 0 3.1416" material="black_glass_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="kitchen_stove_collision" type="box" size="0.48 0.36 0.45" pos="0 0 -0.46" material="metal_mat"/>
+    </body>
+    <body name="apartment_range_hood" pos="-3.48 4.18 2.04" euler="0 0 3.1416">
+      <geom name="apartment_range_hood_visual" type="mesh" mesh="rc_hood_body" material="metal_mat" contype="0" conaffinity="0" group="1" density="0"/>
+    </body>
+    <geom name="kitchen_counter_right_collision" type="box" size="0.78 0.34 0.46" pos="-2.18 4.24 0.46" material="cabinet_mat"/>
+    <site name="kitchen_counter_right_top" type="box" size="0.82 0.37 0.04" pos="-2.18 4.24 0.94" material="countertop_mat"/>
+    <body name="apartment_fridge" pos="-6.28 3.75 0.92" euler="0 0 1.5708">
+      <geom name="apartment_fridge_visual" type="mesh" mesh="rc_fridge_body" material="metal_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="apartment_fridge_clear" type="mesh" mesh="rc_fridge_clear" material="glass_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="apartment_fridge_collision" type="box" size="0.48 0.38 0.92" material="metal_mat"/>
+    </body>
+    <body name="apartment_island" pos="-4.15 2.25 0">
+      <geom name="apartment_island_visual" type="mesh" mesh="kitchen_island_visual" material="cabinet_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="apartment_island_collision" type="box" size="0.88 0.46 0.47" pos="0 0 0.47" material="cabinet_mat"/>
+      <site name="apartment_island_top" type="box" size="0.92 0.50 0.04" pos="0 0 0.94" material="countertop_mat"/>
+      <body name="apartment_fruit_bowl" pos="-0.22 -0.10 1.03" euler="0 0 0.4">
+        <geom name="apartment_fruit_bowl_visual" type="mesh" mesh="rc_fruit_bowl" material="metal_mat" contype="0" conaffinity="0" group="1" density="0"/>
+        <geom name="apartment_fruit_bowl_prop" type="mesh" mesh="rc_fruit_bowl_prop" material="fruit_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      </body>
+    </body>
+
+    <!-- Dining nook, south-west. -->
+    <site name="dining_rug" type="box" size="1.85 1.20 0.012" pos="-4.85 -2.70 0.015" material="rug_mat"/>
+    <body name="apartment_dining_table" pos="-4.90 -2.65 0">
+      <geom name="apartment_dining_table_visual" type="mesh" mesh="dining_table_visual" material="wood_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="apartment_dining_table_collision" type="box" size="0.76 0.42 0.38" pos="0 0 0.38" material="wood_mat"/>
+      <site name="apartment_dining_table_top" type="box" size="0.82 0.47 0.04" pos="0 0 0.78" material="wood_mat"/>
+    </body>
+    <body name="dining_chair_a" pos="-6.00 -2.65 0" euler="0 0 -1.5708">
+      <geom name="dining_chair_a_visual" type="mesh" mesh="dining_chair_visual" material="fabric_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="dining_chair_a_collision" type="box" size="0.27 0.30 0.48" pos="0 0 0.48" material="fabric_mat"/>
+    </body>
+    <body name="dining_chair_b" pos="-3.80 -2.65 0" euler="0 0 1.5708">
+      <geom name="dining_chair_b_visual" type="mesh" mesh="dining_chair_visual" material="fabric_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="dining_chair_b_collision" type="box" size="0.27 0.30 0.48" pos="0 0 0.48" material="fabric_mat"/>
+    </body>
+    <geom name="sideboard_collision" type="box" size="0.26 1.00 0.50" pos="-6.52 -1.10 0.50" material="cabinet_mat"/>
+    <site name="sideboard_top" type="box" size="0.28 1.04 0.035" pos="-6.52 -1.10 1.02" material="countertop_mat"/>
+    <site name="sideboard_book_1" type="box" size="0.035 0.14 0.18" pos="-6.20 -1.50 1.18" material="book_blue_mat"/>
+    <site name="sideboard_book_2" type="box" size="0.035 0.12 0.16" pos="-6.20 -1.30 1.17" material="book_red_mat"/>
+
+    <!-- Living room, east. -->
+    <site name="living_rug" type="box" size="2.65 1.55 0.012" pos="3.75 -1.55 0.015" material="rug_mat"/>
+    <body name="apartment_sofa" pos="4.90 -2.80 0" euler="0 0 3.1416">
+      <geom name="apartment_sofa_visual" type="mesh" mesh="sofa_visual" material="fabric_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="apartment_sofa_collision" type="box" size="1.08 0.42 0.43" pos="0 0 0.43" material="fabric_mat"/>
+    </body>
+    <body name="apartment_armchair" pos="2.20 -2.35 0" euler="0 0 0.55">
+      <geom name="apartment_armchair_visual" type="mesh" mesh="armchair_01_visual" material="armchair_mat" contype="0" conaffinity="0" group="1" density="0"/>
+      <geom name="apartment_armchair_collision" type="box" size="0.34 0.36 0.42" pos="0 0 0.42" material="fabric_mat"/>
+    </body>
+    <geom name="coffee_table_collision" type="box" size="0.58 0.32 0.18" pos="3.60 -1.35 0.30" material="wood_mat"/>
+    <site name="coffee_table_top" type="box" size="0.62 0.36 0.035" pos="3.60 -1.35 0.50" material="countertop_mat"/>
+    <site name="coffee_table_paper" type="box" size="0.20 0.14 0.010" pos="3.42 -1.28 0.55" material="paper_mat"/>
+    <geom name="media_console_collision" type="box" size="0.32 1.30 0.33" pos="6.15 -1.50 0.33" material="cabinet_mat"/>
+    <site name="tv_panel" type="box" size="0.035 0.95 0.52" pos="5.78 -1.50 1.22" material="black_glass_mat"/>
+
+    <!-- Entry and believable clutter kept away from the robot spawn. -->
+    <geom name="shoe_bench" type="box" size="0.65 0.23 0.24" pos="-5.35 0.15 0.24" material="wood_mat"/>
+    <geom name="delivery_box_entry" type="box" size="0.30 0.24 0.18" pos="-6.00 0.82 0.18" euler="0 0 0.25" material="box_mat"/>
+    <geom name="planter_pot_living" type="cylinder" size="0.18 0.22" pos="6.20 2.90 0.22" material="cabinet_mat"/>
+    <site name="plant_leaf_living_1" type="ellipsoid" size="0.10 0.04 0.22" pos="6.13 2.90 0.55" euler="0.4 0.1 0.8" material="plant_mat"/>
+    <site name="plant_leaf_living_2" type="ellipsoid" size="0.10 0.04 0.24" pos="6.28 2.92 0.58" euler="-0.3 0.2 -0.7" material="plant_mat"/>
+  </worldbody>
+
+  <default>
+    <geom friction="1.0 0.02 0.001" solimp="0.95 0.99 0.001" solref="0.005 1"/>
+  </default>
+</mujoco>
