@@ -42,6 +42,12 @@ class SceneSelection:
 SCENES: tuple[SceneSpec, ...] = (
     SceneSpec("default", "scene_43dof.xml", "8m x 8m room with cylinder obstacles"),
     SceneSpec("box_demo", "scene_box_demo.xml", "open room with a visible low box for the forearm clamp demo", aliases=("box",)),
+    SceneSpec(
+        "ball_demo",
+        "scene_ball_demo.xml",
+        "tabletop pick-and-place scene with a light ball target",
+        aliases=("ball",),
+    ),
     SceneSpec("dynamic", "scene_dynamic.xml", "moving rails and rotating obstacle"),
     SceneSpec("stairs", "scene_stairs.xml", "stairs and ramp locomotion stress test"),
     SceneSpec("uneven", "scene_uneven.xml", "bumpy terrain and low rocks"),

@@ -466,6 +466,10 @@
                             mesh="right_hand_palm_link" />
                           <geom pos="0.0415 -0.003 0" quat="1 0 0 0" type="mesh"
                             rgba="0.7 0.7 0.7 1" mesh="right_hand_palm_link" />
+                          <geom name="right_hand_palm_grasp_pad" type="box" size="0.065 0.020 0.055"
+                            pos="0.102 -0.018 0" rgba="0.7 0.7 0.7 0"
+                            density="0" condim="6" friction="9.0 0.7 0.10"
+                            solref="0.004 1" solimp="0.99 0.999 0.0001" />
                           <body name="right_hand_thumb_0_link" pos="0.067 -0.003 0">
                               <inertial pos="-0.000884246 0.00863407 0.000944293"
                                 quat="0.643965 0.462991 -0.398986 0.460173" mass="0.0862366"
@@ -498,6 +502,10 @@
                                     rgba="0.7 0.7 0.7 1" mesh="right_hand_thumb_2_link" />
                                   <geom type="mesh" rgba="0.7 0.7 0.7 1"
                                     mesh="right_hand_thumb_2_link" />
+                                  <geom name="right_hand_thumb_tip_pad" type="sphere" size="0.024"
+                                    pos="0 0.034 0" rgba="0.7 0.7 0.7 0"
+                                    density="0" condim="6" friction="9.0 0.7 0.10"
+                                    solref="0.004 1" solimp="0.99 0.999 0.0001" />
                                 </body>
                               </body>
                           </body>
@@ -519,6 +527,10 @@
                               <geom type="mesh" contype="0" conaffinity="0" group="1" density="0"
                                 rgba="0.7 0.7 0.7 1" mesh="right_hand_middle_1_link" />
                               <geom type="mesh" rgba="0.7 0.7 0.7 1" mesh="right_hand_middle_1_link" />
+                              <geom name="right_hand_middle_tip_pad" type="sphere" size="0.024"
+                                pos="0.040 0 0" rgba="0.7 0.7 0.7 0"
+                                density="0" condim="6" friction="9.0 0.7 0.10"
+                                solref="0.004 1" solimp="0.99 0.999 0.0001" />
                             </body>
                           </body>
                           <body name="right_hand_index_0_link" pos="0.1192 -0.0046 0.0285">
@@ -539,6 +551,10 @@
                               <geom type="mesh" contype="0" conaffinity="0" group="1" density="0"
                                 rgba="0.7 0.7 0.7 1" mesh="right_hand_index_1_link" />
                               <geom type="mesh" rgba="0.7 0.7 0.7 1" mesh="right_hand_index_1_link" />
+                              <geom name="right_hand_index_tip_pad" type="sphere" size="0.024"
+                                pos="0.040 0 0" rgba="0.7 0.7 0.7 0"
+                                density="0" condim="6" friction="9.0 0.7 0.10"
+                                solref="0.004 1" solimp="0.99 0.999 0.0001" />
                             </body>
                           </body>
                         </body>

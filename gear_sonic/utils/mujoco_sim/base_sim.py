@@ -173,30 +173,73 @@ class DefaultEnv:
         if os.environ.get("SONIC_BOX_GRASP_ASSIST", "1").lower() in {"0", "false", "off", "no"}:
             return
 
-        box_joint_id = mujoco.mj_name2id(
-            self.mj_model, mujoco.mjtObj.mjOBJ_JOINT, "demo_box_freejoint"
-        )
-        box_body_id = mujoco.mj_name2id(self.mj_model, mujoco.mjtObj.mjOBJ_BODY, "demo_box")
-        box_geom_id = mujoco.mj_name2id(self.mj_model, mujoco.mjtObj.mjOBJ_GEOM, "demo_box_visual")
         base_body_id = mujoco.mj_name2id(self.mj_model, mujoco.mjtObj.mjOBJ_BODY, "pelvis")
-        if box_joint_id < 0 or box_body_id < 0 or box_geom_id < 0 or base_body_id < 0:
+        if base_body_id < 0:
             return
 
         self.box_grasp_assist = {
             "path": BOX_GRASP_ASSIST_FILE,
-            "box_qpos_adr": int(self.mj_model.jnt_qposadr[box_joint_id]),
-            "box_qvel_adr": int(self.mj_model.jnt_dofadr[box_joint_id]),
-            "box_body_id": int(box_body_id),
-            "box_geom_id": int(box_geom_id),
-            "box_geom_contype": int(self.mj_model.geom_contype[box_geom_id]),
-            "box_geom_conaffinity": int(self.mj_model.geom_conaffinity[box_geom_id]),
             "base_body_id": int(base_body_id),
+            "object_key": None,
             "box_collision_disabled": False,
         }
-        print(f"Box grasp assist ready: {BOX_GRASP_ASSIST_FILE}")
+        self._configure_box_assist_object(
+            {
+                "object_joint": "demo_box_freejoint",
+                "object_body": "demo_box",
+                "object_geom": "demo_box_visual",
+            },
+            quiet=True,
+        )
+        print(f"Object grasp assist ready: {BOX_GRASP_ASSIST_FILE}")
+
+    def _configure_box_assist_object(self, payload: dict, *, quiet: bool = False) -> bool:
+        if self.box_grasp_assist is None:
+            return False
+        joint_name = str(payload.get("object_joint") or "demo_box_freejoint")
+        body_name = str(payload.get("object_body") or "demo_box")
+        geom_name = str(payload.get("object_geom") or "demo_box_visual")
+        key = (joint_name, body_name, geom_name)
+        if self.box_grasp_assist.get("object_key") == key:
+            return "box_qpos_adr" in self.box_grasp_assist
+
+        self._set_box_assist_collision(False)
+        joint_id = mujoco.mj_name2id(self.mj_model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
+        body_id = mujoco.mj_name2id(self.mj_model, mujoco.mjtObj.mjOBJ_BODY, body_name)
+        geom_id = mujoco.mj_name2id(self.mj_model, mujoco.mjtObj.mjOBJ_GEOM, geom_name)
+        if joint_id < 0 or body_id < 0 or geom_id < 0:
+            for name in [
+                "box_qpos_adr",
+                "box_qvel_adr",
+                "box_body_id",
+                "box_geom_id",
+                "box_geom_contype",
+                "box_geom_conaffinity",
+            ]:
+                self.box_grasp_assist.pop(name, None)
+            self.box_grasp_assist["object_key"] = None
+            if not quiet:
+                print(f"Object grasp assist target not found: joint={joint_name} body={body_name} geom={geom_name}")
+            return False
+
+        self.box_grasp_assist.update(
+            {
+                "object_key": key,
+                "box_qpos_adr": int(self.mj_model.jnt_qposadr[joint_id]),
+                "box_qvel_adr": int(self.mj_model.jnt_dofadr[joint_id]),
+                "box_body_id": int(body_id),
+                "box_geom_id": int(geom_id),
+                "box_geom_contype": int(self.mj_model.geom_contype[geom_id]),
+                "box_geom_conaffinity": int(self.mj_model.geom_conaffinity[geom_id]),
+                "box_collision_disabled": False,
+            }
+        )
+        return True
 
     def _set_box_assist_collision(self, enabled: bool):
         if self.box_grasp_assist is None:
+            return
+        if "box_geom_id" not in self.box_grasp_assist:
             return
         geom_id = self.box_grasp_assist["box_geom_id"]
         disabled = self.box_grasp_assist["box_collision_disabled"]
@@ -231,7 +274,11 @@ class DefaultEnv:
                 self._set_box_assist_collision(False)
             return
 
-        if not payload.get("box_enabled", True):
+        if not payload.get("box_enabled", payload.get("object_enabled", True)):
+            self._set_box_assist_collision(False)
+            return
+
+        if not self._configure_box_assist_object(payload):
             self._set_box_assist_collision(False)
             return
 
