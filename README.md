@@ -16,15 +16,16 @@ training JSONL, and model checkpoints belong in the companion data repository
 git clone --recurse-submodules git@github.com:WXyuany/Sonic-Nav.git
 cd Sonic-Nav
 git lfs install
-git submodule update --init --recursive
-python3 -m venv .venv
-. .venv/bin/activate
-pip install -e .
-pip install -r requirements-rl.txt
+bash scripts/bootstrap.sh --data --rl --ros
 source /opt/ros/humble/setup.bash
 make world-model-tests
 make world-model-ci
 ```
+
+Run `bash scripts/bootstrap.sh --help` for the optional local Qwen-VL
+environment and for a custom Python/venv path. The script deliberately does
+not download model weights; follow the Qwen section below when the local VLM
+service is required.
 
 The full ROS/MuJoCo rollout requires the SONIC deployment assets and the
 Unitree G1 policy files used by the upstream project. The CPU-only checks above
