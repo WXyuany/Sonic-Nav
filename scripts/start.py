@@ -64,7 +64,7 @@ if stale_pids:
     print(f"[CLEANUP] Stopped stale Sonic processes: {stale_pids}")
 
 # Pre-switch scene so simulator and sensor publishers use the same XML.
-set_wbc_scene(SCENE, repo_root=REPO)
+set_wbc_scene(SCENE_SELECTION.abs_path, repo_root=REPO)
 print(f"[SCENE] Using {SCENE} ({SCENE_XML})")
 
 # 1. Sim
@@ -116,14 +116,17 @@ subprocess.run(["bash", "-c",
 print("[CTRL] Robot should be standing")
 
 # 3. Sensors
-run_script("sensor_pub.py", "SENSOR")
+run_script("perception/sensor_pub.py", "SENSOR")
 time.sleep(2)
-run_script("mid360_pub.py", "MID360", SCENE_XML)
+run_script("perception/mid360_pub.py", "MID360", SCENE_XML)
 time.sleep(2)
-run_script("camera_pub.py", "CAM", SCENE_XML)
+run_script("perception/camera_pub.py", "CAM", SCENE_XML)
+run_script("tools/world_model_node.py", "WORLD_MODEL")
+run_script("tools/world_model_recovery_coordinator.py", "WORLD_RECOVERY")
+run_script("tools/world_model_executor.py", "WORLD_EXECUTOR")
 
 # 4. Navigation
-run_script("goal_follower.py", "NAV")
+run_script("navigation/goal_follower.py", "NAV")
 
 print()
 print("=" * 45)

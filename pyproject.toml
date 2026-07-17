@@ -78,7 +78,7 @@ module = "tests.*"
 strict_optional = false
 
 [tool.pytest.ini_options]
-testpaths = "decoupled_wbc/tests/"
+testpaths = ["decoupled_wbc/tests/", "scripts/sonic_world/tests/"]
 python_classes = [
   "Test*",
   "*Test"

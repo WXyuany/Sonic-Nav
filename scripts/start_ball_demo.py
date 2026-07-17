@@ -70,6 +70,7 @@ def stream_ball_demo_progress(demo_proc):
         "ball contact-lock assist",
         "contact servo disabled",
         "contact servo enabled",
+        "rollout log:",
         "sent start command:",
         "using ball anchor:",
         "approach reached:",
@@ -80,6 +81,7 @@ def stream_ball_demo_progress(demo_proc):
         "no plausible ball anchor",
         "IK right-hand poses applied:",
         "IK result rejected:",
+        "skill graph:",
         "contact servo",
         "capture not ready",
         "palm pocket not ready",
@@ -131,7 +133,7 @@ def check_processes(ignore=None):
             raise RuntimeError(f"{name} exited unexpectedly with code {code}")
 
 
-def cleanup(*_):
+def shutdown_children():
     print("\n[STOP] Shutting down...")
     for proc in reversed(procs):
         try:
@@ -140,6 +142,10 @@ def cleanup(*_):
         except Exception:
             proc.kill()
     print("[STOP] Done")
+
+
+def cleanup(*_):
+    shutdown_children()
     sys.exit(0)
 
 
@@ -149,12 +155,16 @@ def main():
 
     scene_arg = sys.argv[1] if len(sys.argv) > 1 else "ball_demo"
     demo_args = sys.argv[2:]
+    exit_after_demo = "--exit-after-demo" in demo_args
+    demo_args = [arg for arg in demo_args if arg != "--exit-after-demo"]
     use_ball_anchor = "--no-ball-anchor" not in demo_args
     demo_args = [arg for arg in demo_args if arg != "--no-ball-anchor"]
     if use_ball_anchor and "--use-ball-anchor" not in demo_args:
         demo_args.append("--use-ball-anchor")
     if use_ball_anchor and "--require-ball-anchor" not in demo_args:
         demo_args.append("--require-ball-anchor")
+    if exit_after_demo and "--hold" not in demo_args and "--no-hold" not in demo_args:
+        demo_args.append("--no-hold")
     hold_final_pose = "--no-hold" not in demo_args
     if hold_final_pose and "--hold" not in demo_args:
         demo_args.append("--hold")
@@ -218,17 +228,20 @@ def main():
     print("[DEPLOY] Init Done!")
     print("[CTRL] Start/planner command will be sent by the ZMQ ball demo")
 
-    run_script("sensor_pub.py", "SENSOR", startup_sleep=1.0)
+    run_script("perception/sensor_pub.py", "SENSOR", startup_sleep=1.0)
     run_script(
-        "camera_pub.py",
+        "perception/camera_pub.py",
         "CAM",
         [str(selection.abs_path), "--fps", "20", "--depth-fps", "20"],
         startup_sleep=1.0,
     )
     if use_ball_anchor:
-        run_script("ball_anchor_pub.py", "BALL_ANCHOR", [str(selection.abs_path)], startup_sleep=1.0)
+        run_script("perception/ball_anchor_pub.py", "BALL_ANCHOR", [str(selection.abs_path)], startup_sleep=1.0)
+        run_script("tools/world_model_node.py", "WORLD_MODEL", startup_sleep=1.0)
+        run_script("tools/world_model_recovery_coordinator.py", "WORLD_RECOVERY", startup_sleep=1.0)
+        run_script("tools/world_model_executor.py", "WORLD_EXECUTOR", startup_sleep=1.0)
 
-    demo_proc = run_script("ball_pick_place_demo.py", "BALL_DEMO", demo_args, startup_sleep=1.0)
+    demo_proc = run_script("manipulation/ball_pick_place_demo.py", "BALL_DEMO", demo_args, startup_sleep=1.0)
     print("[BALL_DEMO] Sequence progress follows:")
     progress_state = stream_ball_demo_progress(demo_proc)
     if hold_final_pose:
@@ -255,6 +268,10 @@ def main():
     print("  Ball pick-place sequence completed.")
     print("  Ctrl+C to stop the simulator/deploy stack.")
     print("=" * 45)
+
+    if exit_after_demo:
+        shutdown_children()
+        return
 
     while True:
         time.sleep(1)

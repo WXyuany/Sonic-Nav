@@ -1,0 +1,98 @@
+{
+  "name": "mixed_tabletop_tasks",
+  "metadata": {
+    "purpose": "One accumulated world state supports multiple VLM-style task requests."
+  },
+  "anchors": [
+    {
+      "scene": "tabletop_world",
+      "box_name": "demo_box",
+      "source": "scenario",
+      "frame_id": "map",
+      "box_center_map": [1.6, 0.12, 0.84],
+      "box_size": [0.18, 0.12, 0.14],
+      "box_point_base": [0.52, 0.1, 0.04],
+      "box_point_camera_depth": [0.1, 0.05, 0.6],
+      "grasp": {
+        "approach_target_x": 0.5,
+        "walk_duration": 4.0,
+        "walk_speed": 0.22,
+        "reach_x": 0.48,
+        "open_y": 0.22,
+        "clamp_y": 0.1,
+        "reach_z": 0.04,
+        "lift_z": 0.12,
+        "base_target_map": [1.1, 0.1, 0.0]
+      }
+    },
+    {
+      "scene": "tabletop_world",
+      "ball_name": "demo_ball",
+      "source": "scenario",
+      "frame_id": "map",
+      "ball_center_map": [1.62, -0.28, 0.84],
+      "ball_radius": 0.045,
+      "ball_size": [0.09, 0.09, 0.09],
+      "ball_point_base": [0.54, -0.24, 0.03],
+      "ball_point_camera_depth": [0.18, 0.05, 0.63],
+      "place_center_map": [1.62, -0.08, 0.84],
+      "place_point_base": [0.54, -0.04, 0.03],
+      "grasp": {
+        "approach_target_x": 0.56,
+        "walk_duration": 4.5,
+        "walk_speed": 0.24,
+        "target_y": -0.24,
+        "reach_x": 0.54,
+        "reach_z": 0.03,
+        "base_target_map": [1.06, -0.18, 0.0]
+      }
+    }
+  ],
+  "expected_objects": ["demo_ball", "demo_box", "place_target"],
+  "tasks": [
+    {
+      "name": "vlm_move_ball",
+      "request": {
+        "task": "move",
+        "object": "demo_ball",
+        "target": "place_target",
+        "id": "vlm-move-ball"
+      },
+      "expect": {
+        "steps": [
+          "navigate.approach_object",
+          "manip.align_workspace",
+          "manip.single_hand_pinch",
+          "manip.lift_object",
+          "manip.transport_object",
+          "manip.place_object",
+          "manip.release"
+        ],
+        "demo_kind": "ball",
+        "grasp_affordance": "single_hand_pinch",
+        "missing_skills": [],
+        "unready_count": 0
+      }
+    },
+    {
+      "name": "vlm_pick_box",
+      "request": {
+        "action": "grasp",
+        "object": "demo_box",
+        "id": "vlm-pick-box"
+      },
+      "expect": {
+        "steps": [
+          "navigate.approach_object",
+          "manip.align_workspace",
+          "manip.bimanual_clamp",
+          "manip.lift_object"
+        ],
+        "demo_kind": "box",
+        "grasp_affordance": "bimanual_clamp",
+        "missing_skills": [],
+        "unready_count": 0
+      }
+    }
+  ]
+}

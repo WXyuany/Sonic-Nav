@@ -36,6 +36,8 @@ except ImportError:
 
 GEAR_SONIC_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 BOX_GRASP_ASSIST_FILE = os.environ.get("SONIC_BOX_GRASP_ASSIST_FILE", "/tmp/sonic_box_grasp_assist.json")
+SIM_RESET_FILE = os.environ.get("SONIC_SIM_RESET_FILE", "/tmp/sonic_sim_reset.json")
+QPOS_META_FILE = os.environ.get("SONIC_QPOS_META_FILE", "/tmp/sonic_qpos_meta.json")
 
 
 class DefaultEnv:
@@ -82,6 +84,8 @@ class DefaultEnv:
 
         self.lidar_sim = None
         self._init_lidar()
+        self.reset_request_path = SIM_RESET_FILE
+        self._last_reset_request_mtime = 0.0
 
     def start_image_publish_subprocess(self, start_method: str = "spawn", camera_port: int = 5555):
         from gear_sonic.utils.mujoco_sim.image_publish_utils import ImagePublishProcess
@@ -147,6 +151,19 @@ class DefaultEnv:
             return
         try:
             atomic_save_npy("/tmp/sonic_qpos.npy", self.mj_data.qpos.copy())
+            if not getattr(self, "_qpos_meta_written", False):
+                payload = {
+                    "schema": "sonic_qpos_snapshot_meta_v0",
+                    "scene_xml": str(getattr(self, "scene_xml_path", "")),
+                    "nq": int(self.mj_model.nq),
+                    "nv": int(self.mj_model.nv),
+                    "written_at": time.time(),
+                }
+                meta_path = Path(QPOS_META_FILE)
+                temp_path = meta_path.with_suffix(f".tmp.{os.getpid()}")
+                temp_path.write_text(json.dumps(payload, sort_keys=True), encoding="utf-8")
+                os.replace(temp_path, meta_path)
+                self._qpos_meta_written = True
         except OSError:
             pass
 
@@ -167,6 +184,93 @@ class DefaultEnv:
             np.save("/tmp/sonic_mid360.npy", self._mid360.points)
         except Exception:
             pass
+
+    def _maybe_apply_reset_request(self):
+        path = self.reset_request_path
+        if not path:
+            return
+        try:
+            stat = os.stat(path)
+        except OSError:
+            return
+        if stat.st_mtime <= self._last_reset_request_mtime:
+            return
+        self._last_reset_request_mtime = stat.st_mtime
+
+        try:
+            with open(path, "r", encoding="utf-8") as handle:
+                payload = json.load(handle)
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"Warning: ignoring bad Sonic sim reset request: {exc}")
+            return
+        if not payload.get("enabled", True):
+            return
+
+        action = str(payload.get("action") or "reset_scene")
+        if action in {"reset_scene", "reset_all"}:
+            self._reset_scene_data()
+        elif action not in {"set_freejoint", "set_freejoints"}:
+            print(f"Warning: unknown Sonic sim reset action: {action}")
+            return
+
+        freejoints = payload.get("freejoints")
+        if freejoints is None and payload.get("joint"):
+            freejoints = [payload]
+        for spec in freejoints or []:
+            if isinstance(spec, dict):
+                self._set_freejoint_pose(
+                    spec.get("joint") or spec.get("joint_name"),
+                    spec.get("pos") or spec.get("position"),
+                    spec.get("quat") or spec.get("quaternion"),
+                )
+
+        mujoco.mj_forward(self.mj_model, self.mj_data)
+        self._write_qpos()
+        print(f"Applied Sonic sim reset request: action={action} reason={payload.get('reason', '-')}")
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+
+    def _reset_scene_data(self):
+        mujoco.mj_resetData(self.mj_model, self.mj_data)
+        self.mj_data.qvel[:] = 0.0
+        if getattr(self, "use_floating_root_link", False) and self.mj_data.qpos[2] < 0.3:
+            self.mj_data.qpos[2] = 0.793
+        self._step_cnt = 0
+        mujoco.mj_forward(self.mj_model, self.mj_data)
+
+    def _set_freejoint_pose(self, joint_name, pos, quat=None) -> bool:
+        if not joint_name or pos is None:
+            return False
+        joint_id = mujoco.mj_name2id(self.mj_model, mujoco.mjtObj.mjOBJ_JOINT, str(joint_name))
+        if joint_id < 0:
+            print(f"Warning: Sonic sim reset freejoint not found: {joint_name}")
+            return False
+        if int(self.mj_model.jnt_type[joint_id]) != int(mujoco.mjtJoint.mjJNT_FREE):
+            print(f"Warning: Sonic sim reset joint is not freejoint: {joint_name}")
+            return False
+
+        qpos_adr = int(self.mj_model.jnt_qposadr[joint_id])
+        qvel_adr = int(self.mj_model.jnt_dofadr[joint_id])
+        pos_arr = np.asarray(pos, dtype=np.float64)
+        if pos_arr.shape != (3,) or not np.all(np.isfinite(pos_arr)):
+            print(f"Warning: bad Sonic sim reset freejoint position for {joint_name}: {pos}")
+            return False
+        quat_arr = np.asarray([1.0, 0.0, 0.0, 0.0] if quat is None else quat, dtype=np.float64)
+        if quat_arr.shape != (4,) or not np.all(np.isfinite(quat_arr)):
+            print(f"Warning: bad Sonic sim reset freejoint quaternion for {joint_name}: {quat}")
+            return False
+        norm = np.linalg.norm(quat_arr)
+        if norm < 1e-6:
+            quat_arr = np.asarray([1.0, 0.0, 0.0, 0.0], dtype=np.float64)
+        else:
+            quat_arr = quat_arr / norm
+
+        self.mj_data.qpos[qpos_adr : qpos_adr + 3] = pos_arr
+        self.mj_data.qpos[qpos_adr + 3 : qpos_adr + 7] = quat_arr
+        self.mj_data.qvel[qvel_adr : qvel_adr + 6] = 0.0
+        return True
 
     def _init_box_grasp_assist(self):
         self.box_grasp_assist = None
@@ -374,6 +478,8 @@ class DefaultEnv:
     def init_scene(self):
         """Initialize the default robot scene"""
         xml_path = str(pathlib.Path(GEAR_SONIC_ROOT) / self.config["ROBOT_SCENE"])
+        self.scene_xml_path = pathlib.Path(xml_path).resolve()
+        self._qpos_meta_written = False
         self.mj_model = mujoco.MjModel.from_xml_path(xml_path)
         self.mj_data = mujoco.MjData(self.mj_model)
         self.mj_data.qpos[2] = 0.793  # pelvis height above ground
@@ -617,6 +723,7 @@ class DefaultEnv:
         return obs
 
     def sim_step(self):
+        self._maybe_apply_reset_request()
         self.obs = self.prepare_obs()
         self.unitree_bridge.PublishLowState(self.obs)
         if self.unitree_bridge.joystick:
@@ -768,7 +875,7 @@ class DefaultEnv:
         return self_collision
 
     def reset(self):
-        mujoco.mj_resetData(self.mj_model, self.mj_data)
+        self._reset_scene_data()
 
 
 class BaseSimulator:

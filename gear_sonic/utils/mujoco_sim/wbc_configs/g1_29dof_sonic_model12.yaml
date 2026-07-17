@@ -1,6 +1,6 @@
 # copy from g1_43dof_hist.yaml
 ROBOT_TYPE: 'g1_29dof' # Robot name, "go2", "b2", "b2w", "h1", "go2w", "g1" 
-ROBOT_SCENE: "gear_sonic/data/robot_model/model_data/g1/scene_ball_demo.xml" # Robot scene, for Sim2Sim
+ROBOT_SCENE: "reports/curriculum/stage1_sidegrasp_late_teacher_learned_v2/materialized/scenes/scene_sonic_episode_set_table_sequence.xml" # Robot scene, for Sim2Sim
 # ROBOT_SCENE: "gear_sonic/data/robot_model/model_data/g1/scene_29dof_activated3dex.xml"
 
 DOMAIN_ID: 0 # Domain id

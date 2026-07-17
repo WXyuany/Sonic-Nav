@@ -1,0 +1,3 @@
+[submodule "external_data"]
+	path = external_data
+	url = git@github.com:WXyuany/Sonic-Nav-Data.git

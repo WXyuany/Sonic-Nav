@@ -1,0 +1,65 @@
+{
+  "name": "tabletop_ball_pick_place",
+  "metadata": {
+    "purpose": "Table-top ball anchor converted into single-hand pick-place skills."
+  },
+  "anchors": [
+    {
+      "scene": "ball_demo",
+      "ball_name": "demo_ball",
+      "source": "scenario",
+      "frame_id": "map",
+      "ball_center_map": [1.62, -0.28, 0.84],
+      "ball_radius": 0.045,
+      "ball_size": [0.09, 0.09, 0.09],
+      "ball_point_base": [0.54, -0.24, 0.03],
+      "ball_point_camera_depth": [0.18, 0.05, 0.63],
+      "place_center_map": [1.62, -0.08, 0.84],
+      "place_point_base": [0.54, -0.04, 0.03],
+      "grasp": {
+        "approach_target_x": 0.56,
+        "walk_duration": 4.5,
+        "walk_speed": 0.24,
+        "target_y": -0.24,
+        "reach_x": 0.54,
+        "reach_z": 0.03,
+        "base_target_map": [1.06, -0.18, 0.0]
+      }
+    }
+  ],
+  "expected_objects": ["demo_ball", "place_target"],
+  "tasks": [
+    {
+      "name": "move_ball_to_place_target",
+      "request": {
+        "task": "move",
+        "object": "demo_ball",
+        "target": "place_target"
+      },
+      "expect": {
+        "steps": [
+          "navigate.approach_object",
+          "manip.align_workspace",
+          "manip.single_hand_pinch",
+          "manip.lift_object",
+          "manip.transport_object",
+          "manip.place_object",
+          "manip.release"
+        ],
+        "handlers": [
+          "demo_locomotion_phase_runtime",
+          "workspace_alignment_primitive",
+          "contact_grasp_primitive",
+          "lift_stability_primitive",
+          "carry_transfer_primitive",
+          "place_primitive",
+          "release_primitive"
+        ],
+        "demo_kind": "ball",
+        "grasp_affordance": "single_hand_pinch",
+        "missing_skills": [],
+        "unready_count": 0
+      }
+    }
+  ]
+}

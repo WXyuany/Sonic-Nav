@@ -1,0 +1,15 @@
+{
+  "manip.side_grasp": {
+    "close_ratio": 0.63,
+    "contact_x_delta_m": 0.0,
+    "contact_z_delta_m": -0.006,
+    "grasp_wrist_pitch": -0.05
+  },
+  "manip.lift_object": {
+    "hold_close_ratio": 0.88,
+    "lift_duration": 2.4,
+    "lift_z": 0.18,
+    "servo_lift_z_lead": 0.032,
+    "squeeze_close_ratio": 0.81
+  }
+}

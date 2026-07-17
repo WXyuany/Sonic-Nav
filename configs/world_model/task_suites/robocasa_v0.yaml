@@ -1,0 +1,207 @@
+name: robocasa_task_suite
+version: v0
+description: >
+  RoboCasa-first VLA task suite for SONIC world-model planning. These tasks
+  describe clean MuJoCo/RoboCasa interaction scenes and produce generic object
+  anchors, task requests, affordances, and expected skill graphs.
+metadata:
+  provider: robocasa
+  role: main_physical_vla_task_source
+
+tasks:
+  - id: tabletop_ball_to_tray
+    description: Move a small ball from the left side of a tabletop to a tray.
+    scene: robocasa_kitchen
+    tags: [tabletop, pick_place, single_hand, sphere]
+    objects:
+      - object_id: rb_ball
+        category: ball
+        shape: {kind: sphere, radius: 0.045}
+        pose_map: {frame_id: map, position: [1.58, -0.24, 0.84]}
+        pose_base: {frame_id: base_link, position: [0.54, -0.24, 0.03]}
+        pose_camera: {frame_id: camera_depth_optical_frame, position: [0.18, 0.05, 0.63]}
+        support: kitchen_table
+        grasp:
+          approach_target_x: 0.56
+          walk_duration: 4.3
+          walk_speed: 0.23
+          target_y: -0.24
+          reach_x: 0.54
+          reach_z: 0.03
+          base_target_map: [1.02, -0.18, 0.0]
+      - object_id: right_tray
+        category: place_target
+        shape: target
+        pose_map: {frame_id: map, position: [1.58, 0.12, 0.84]}
+        pose_base: {frame_id: base_link, position: [0.54, 0.10, 0.03]}
+        support: kitchen_table
+      - object_id: kitchen_table
+        category: table
+        shape: {kind: box, size: [1.2, 0.7, 0.72]}
+        pose_map: {frame_id: map, position: [1.58, -0.03, 0.42]}
+    relations:
+      - {subject: rb_ball, relation: on, object: kitchen_table, confidence: 1.0}
+      - {subject: right_tray, relation: on, object: kitchen_table, confidence: 1.0}
+    request: {task: move, object: rb_ball, target: right_tray}
+    expect:
+      steps: [navigate.approach_object, manip.align_workspace, manip.single_hand_pinch, manip.lift_object, manip.transport_object, manip.place_object, manip.release]
+      demo_kind: ball
+      grasp_affordance: single_hand_pinch
+      missing_skills: []
+      unready_count: 0
+      contract_error_count: 0
+      decision_status: ready_to_execute
+
+  - id: clamp_box_from_table
+    description: Clamp a light box with both forearms/hands and lift it from a table.
+    scene: robocasa_apartment
+    tags: [tabletop, pick, bimanual, box]
+    objects:
+      - object_id: rb_package
+        category: package
+        shape: {kind: box, size: [0.20, 0.14, 0.14]}
+        pose_map: {frame_id: map, position: [1.60, -0.08, 0.86]}
+        pose_base: {frame_id: base_link, position: [0.52, -0.08, 0.05]}
+        support: dining_table
+        grasp:
+          approach_target_x: 0.50
+          walk_duration: 4.1
+          walk_speed: 0.22
+          reach_x: 0.48
+          open_y: 0.24
+          clamp_y: 0.11
+          reach_z: 0.04
+          lift_z: 0.12
+          base_target_map: [1.10, -0.06, 0.0]
+      - object_id: dining_table
+        category: table
+        shape: {kind: box, size: [1.4, 0.8, 0.74]}
+        pose_map: {frame_id: map, position: [1.58, 0.02, 0.42]}
+      - object_id: counter
+        category: counter
+        shape: {kind: box, size: [1.4, 0.5, 0.86]}
+        pose_map: {frame_id: map, position: [1.62, 0.34, 0.45]}
+    request: {task: pick, object: rb_package}
+    expect:
+      steps: [navigate.approach_object, manip.align_workspace, manip.bimanual_clamp, manip.lift_object]
+      demo_kind: box
+      grasp_affordance: bimanual_clamp
+      missing_skills: []
+      unready_count: 0
+      contract_error_count: 0
+      decision_status: ready_to_execute
+
+  - id: bottle_to_tray
+    description: Side-grasp a bottle/can-like cylinder and place it into a tray.
+    scene: robocasa_kitchen
+    tags: [tabletop, pick_place, side_grasp, cylinder]
+    objects:
+      - object_id: rb_bottle
+        category: bottle
+        shape: {kind: cylinder, radius: 0.035, size: [0.07, 0.07, 0.18]}
+        pose_map: {frame_id: map, position: [1.46, -0.15, 0.91]}
+        pose_base: {frame_id: base_link, position: [0.50, -0.17, 0.09]}
+        support: kitchen_counter
+        grasp:
+          approach_target_x: 0.55
+          walk_duration: 4.2
+          walk_speed: 0.23
+          target_y: -0.17
+          reach_x: 0.51
+          reach_z: 0.08
+          base_target_map: [0.96, -0.12, 0.0]
+      - object_id: tray_target
+        category: place_target
+        shape: target
+        pose_map: {frame_id: map, position: [1.46, 0.16, 0.86]}
+        pose_base: {frame_id: base_link, position: [0.50, 0.12, 0.04]}
+        support: kitchen_counter
+      - object_id: kitchen_counter
+        category: counter
+        shape: {kind: box, size: [1.6, 0.55, 0.86]}
+        pose_map: {frame_id: map, position: [1.48, 0.02, 0.43]}
+    request: {task: move, object: rb_bottle, target: tray_target}
+    expect:
+      steps: [navigate.approach_object, manip.align_workspace, manip.side_grasp, manip.lift_object, manip.transport_object, manip.place_object, manip.release]
+      demo_kind: ball
+      grasp_affordance: side_grasp
+      missing_skills: []
+      unready_count: 0
+      contract_error_count: 0
+      decision_status: ready_to_execute
+
+  - id: walk_to_table_pick_fruit
+    description: Approach a table from farther away and pick a small fruit.
+    scene: robocasa_cafe
+    tags: [navigation_manipulation, pick, fruit, single_hand]
+    objects:
+      - object_id: cafe_fruit
+        category: fruit
+        shape: {kind: sphere, radius: 0.04}
+        pose_map: {frame_id: map, position: [2.05, -0.30, 0.82]}
+        pose_base: {frame_id: base_link, position: [0.62, -0.24, 0.04]}
+        support: cafe_table
+        grasp:
+          approach_target_x: 0.58
+          walk_duration: 5.2
+          walk_speed: 0.25
+          target_y: -0.24
+          reach_x: 0.55
+          reach_z: 0.035
+          base_target_map: [1.42, -0.18, 0.0]
+      - object_id: cafe_table
+        category: table
+        shape: {kind: box, size: [0.95, 0.72, 0.72]}
+        pose_map: {frame_id: map, position: [2.05, -0.10, 0.40]}
+    request: {task: pick, object: cafe_fruit}
+    expect:
+      steps: [navigate.approach_object, manip.align_workspace, manip.single_hand_pinch, manip.lift_object]
+      demo_kind: ball
+      grasp_affordance: single_hand_pinch
+      missing_skills: []
+      unready_count: 0
+      contract_error_count: 0
+      decision_status: ready_to_execute
+
+  - id: mug_counter_to_table
+    description: Move a mug from a kitchen counter onto a nearby table target.
+    scene: robocasa_galley
+    tags: [countertop, pick_place, side_grasp, cup]
+    objects:
+      - object_id: rb_mug
+        category: mug
+        shape: {kind: cylinder, radius: 0.04, size: [0.08, 0.08, 0.11]}
+        pose_map: {frame_id: map, position: [1.38, -0.20, 0.92]}
+        pose_base: {frame_id: base_link, position: [0.48, -0.21, 0.10]}
+        support: galley_counter
+        grasp:
+          approach_target_x: 0.54
+          walk_duration: 4.0
+          walk_speed: 0.22
+          target_y: -0.21
+          reach_x: 0.50
+          reach_z: 0.09
+          base_target_map: [0.88, -0.16, 0.0]
+      - object_id: table_place
+        category: place_target
+        shape: target
+        pose_map: {frame_id: map, position: [1.38, 0.22, 0.78]}
+        pose_base: {frame_id: base_link, position: [0.48, 0.15, 0.03]}
+        support: side_table
+      - object_id: galley_counter
+        category: counter
+        shape: {kind: box, size: [1.8, 0.46, 0.90]}
+        pose_map: {frame_id: map, position: [1.38, -0.30, 0.45]}
+      - object_id: side_table
+        category: table
+        shape: {kind: box, size: [1.0, 0.65, 0.74]}
+        pose_map: {frame_id: map, position: [1.38, 0.25, 0.38]}
+    request: {task: move, object: rb_mug, target: table_place}
+    expect:
+      steps: [navigate.approach_object, manip.align_workspace, manip.side_grasp, manip.lift_object, manip.transport_object, manip.place_object, manip.release]
+      demo_kind: ball
+      grasp_affordance: side_grasp
+      missing_skills: []
+      unready_count: 0
+      contract_error_count: 0
+      decision_status: ready_to_execute

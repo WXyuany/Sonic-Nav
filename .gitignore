@@ -202,6 +202,10 @@ uv.lock
 .venv_data_collection/
 .venv_camera/
 .venv_inference/
+.venv_qwen_vl/
+models/Qwen2.5-VL-3B-Instruct/
+models/grounding-dino-tiny/
+external_dependencies/molmospaces-src/
 
 # XRoboToolkit-PC-Service-Pybind
 xrobotoolkit_sdk.cpython-*-*-*.so
@@ -209,6 +213,20 @@ teleop_vids/
 *.code-workspace
 # Motion/training data (large local datasets, not tracked in git)
 data/
+MatterPort3D/
+MolmoSpacesAssets/
+.cache/molmo-spaces-resources/
+reports/benchmarks/
+reports/datasets/
+reports/policy_ab/
+reports/policy_data/
+reports/policy_models/
+reports/perception/
+reports/policy_outcomes/
+reports/primitive_microbench/
+reports/rollouts/
+reports/task_batches/
+gear_sonic/data/robot_model/model_data/g1/scene_molmospaces_*.xml
 !gear_sonic/data/
 !gear_sonic/data/robot_model/
 !gear_sonic/data/robot_model/model_data/
@@ -225,6 +243,16 @@ sonic_release/
 # Training output logs
 logs_rl/
 logs_eval/
+
+# Local environments, package-manager artefacts, and generated benchmark scenes.
+.venv_rl/
+=0.7.0
+gear_sonic/data/robot_model/model_data/g1/scene_ms_*.xml
+gear_sonic/data/robot_model/model_data/g1/scene_sonic_task_*.xml
+
+# Experiment outputs are versioned in the Sonic-Nav-Data companion repository.
+reports/**
+artifacts/**
 
 # Model checkpoints directory
 models/

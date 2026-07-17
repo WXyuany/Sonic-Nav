@@ -1,0 +1,52 @@
+schema: sonic_world_model_residual_ppo_config_v0
+algorithm: hybrid_recurrent_ppo
+controller_boundary: frozen_sonic_wbc
+environment: world_model_residual_env
+observation:
+  dimension: 48
+  fields:
+  - object_target_base_geometry
+  - relative_xy_yaw_error
+  - object_shape_affordance
+  - robot_stability_velocity
+  - current_skill_onehot
+  - effect_evidence_and_recovery_history
+action:
+  continuous:
+  - forward_residual_mps
+  - lateral_residual_mps
+  - yaw_residual_radps
+  - approach_duration_scale
+  - contact_x_delta_m
+  - contact_z_delta_m
+  - close_ratio_delta
+  - lift_z_delta_m
+  discrete:
+  name: recovery_mode
+  values: [continue, reobserve, micro_adjust, replan, abort]
+network:
+  encoder_hidden: [256, 256]
+  recurrent_hidden: 128
+  activation: silu
+  actor_std_init: -1.2
+reward:
+  task_success: 10.0
+  stage_success: 2.0
+  approach_progress: 1.0
+  workspace_progress: 1.5
+  valid_contact: 2.0
+  stable_lift: 3.0
+  target_stability: 4.0
+  collision: -3.0
+  dropped_object: -6.0
+  ineffective_recovery: -0.5
+  timeout: -2.0
+ppo:
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_ratio: 0.2
+  value_coef: 0.5
+  entropy_coef: 0.01
+  learning_rate: 0.0003
+  rollout_steps: 64
+  epochs: 5

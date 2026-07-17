@@ -68,6 +68,7 @@ def stream_box_demo_progress(demo_proc):
     interesting = (
         "ZMQ publisher bound:",
         "box attach assist",
+        "rollout log:",
         "sent start command:",
         "using box anchor:",
         "approach reached:",
@@ -78,6 +79,7 @@ def stream_box_demo_progress(demo_proc):
         "no plausible box anchor",
         "IK upper-body poses applied:",
         "IK result rejected:",
+        "skill graph:",
         "lift reference:",
         "box lifted:",
         "box not lifted",
@@ -120,7 +122,7 @@ def check_processes(ignore=None):
             raise RuntimeError(f"{name} exited unexpectedly with code {code}")
 
 
-def cleanup(*_):
+def shutdown_children():
     print("\n[STOP] Shutting down...")
     for proc in reversed(procs):
         try:
@@ -129,6 +131,10 @@ def cleanup(*_):
         except Exception:
             proc.kill()
     print("[STOP] Done")
+
+
+def cleanup(*_):
+    shutdown_children()
     sys.exit(0)
 
 
@@ -138,12 +144,16 @@ def main():
 
     scene_arg = sys.argv[1] if len(sys.argv) > 1 else "box_demo"
     demo_args = sys.argv[2:]
+    exit_after_demo = "--exit-after-demo" in demo_args
+    demo_args = [arg for arg in demo_args if arg != "--exit-after-demo"]
     use_box_anchor = "--no-box-anchor" not in demo_args
     demo_args = [arg for arg in demo_args if arg != "--no-box-anchor"]
     if use_box_anchor and "--use-box-anchor" not in demo_args:
         demo_args.append("--use-box-anchor")
     if use_box_anchor and "--require-box-anchor" not in demo_args:
         demo_args.append("--require-box-anchor")
+    if exit_after_demo and "--hold" not in demo_args and "--no-hold" not in demo_args:
+        demo_args.append("--no-hold")
     hold_final_pose = "--no-hold" not in demo_args
     if hold_final_pose and "--hold" not in demo_args:
         demo_args.append("--hold")
@@ -207,17 +217,20 @@ def main():
     print("[DEPLOY] Init Done!")
     print("[CTRL] Start/planner command will be sent by the ZMQ box demo")
 
-    run_script("sensor_pub.py", "SENSOR", startup_sleep=1.0)
+    run_script("perception/sensor_pub.py", "SENSOR", startup_sleep=1.0)
     run_script(
-        "camera_pub.py",
+        "perception/camera_pub.py",
         "CAM",
         [str(selection.abs_path), "--fps", "20", "--depth-fps", "20"],
         startup_sleep=1.0,
     )
     if use_box_anchor:
-        run_script("box_anchor_pub.py", "BOX_ANCHOR", [str(selection.abs_path)], startup_sleep=1.0)
+        run_script("perception/box_anchor_pub.py", "BOX_ANCHOR", [str(selection.abs_path)], startup_sleep=1.0)
+        run_script("tools/world_model_node.py", "WORLD_MODEL", startup_sleep=1.0)
+        run_script("tools/world_model_recovery_coordinator.py", "WORLD_RECOVERY", startup_sleep=1.0)
+        run_script("tools/world_model_executor.py", "WORLD_EXECUTOR", startup_sleep=1.0)
 
-    demo_proc = run_script("box_grasp_demo.py", "BOX_DEMO", demo_args, startup_sleep=1.0)
+    demo_proc = run_script("manipulation/box_grasp_demo.py", "BOX_DEMO", demo_args, startup_sleep=1.0)
     print("[BOX_DEMO] Sequence progress follows:")
     progress_state = stream_box_demo_progress(demo_proc)
     if hold_final_pose:
@@ -244,6 +257,10 @@ def main():
     print("  Box demo sequence completed.")
     print("  Ctrl+C to stop the simulator/deploy stack.")
     print("=" * 45)
+
+    if exit_after_demo:
+        shutdown_children()
+        return
 
     while True:
         time.sleep(1)

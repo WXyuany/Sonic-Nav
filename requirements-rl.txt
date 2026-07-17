@@ -1,0 +1,4 @@
+# World-model residual policy training. SONIC/WBC remains frozen.
+# RSL-RL is installed from the official repository because it is not published
+# on the configured PyPI index.
+rsl-rl-lib @ git+https://github.com/leggedrobotics/rsl_rl.git@016c7ede710e358b7d6c205642e2540804d6281f

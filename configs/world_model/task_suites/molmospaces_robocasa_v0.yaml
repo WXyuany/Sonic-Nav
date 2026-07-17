@@ -1,0 +1,868 @@
+name: molmospaces_robocasa_benchmark
+version: v0
+description: MolmoSpaces-derived benchmark tasks instantiated as RoboCasa/Sonic MuJoCo
+  scenes. MolmoSpaces supplies language, object categories, shapes, and task intent;
+  generated RoboCasa-style scenes supply stable G1 physics and contacts.
+metadata:
+  provider: molmospaces_to_robocasa
+  source_benchmark: external_dependencies/molmospaces-src/mlspaces_tests/data_generation/test_benchmark/benchmark.json
+  generated_scene_dir: gear_sonic/data/robot_model/model_data/g1
+  episode_indices:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  evaluation_modes:
+  - privileged_anchor
+  - visual_perception
+tasks:
+- id: ms_ep0000_cup_pick
+  description: Pick up the green glossy cup with spherical base
+  scene: gear_sonic/data/robot_model/model_data/g1/scene_ms_ep0000_cup_pick.xml
+  tags:
+  - molmospaces
+  - pick
+  - side_grasp
+  - cup
+  metadata:
+    source: molmospaces_robocasa_generator
+    molmospaces_episode_index: 0
+    molmospaces_episode_id: holodeck-objaverse_house_1194_traj_3
+    molmospaces_scene_key: holodeck-objaverse_house_1194
+    molmospaces_task_kind: pick
+    scene_template: robocasa_kitchen
+    generated_scene_xml: gear_sonic/data/robot_model/model_data/g1/scene_ms_ep0000_cup_pick.xml
+  objects:
+  - object_id: ms_ep0000_cup_pick_object
+    category: cup
+    shape:
+      kind: cylinder
+      radius: 0.045
+      size:
+      - 0.09
+      - 0.09
+      - 0.11
+    pose_map:
+      frame_id: map
+      position:
+      - 1.46
+      - 0.0249
+      - 0.915
+    pose_base:
+      frame_id: base_link
+      position:
+      - 0.52
+      - 0.0249
+      - 0.055
+    pose_camera:
+      frame_id: camera_depth_optical_frame
+      position:
+      - 0.18
+      - -0.0062
+      - 0.62
+    support: ms_ep0000_cup_pick_support
+    grasp:
+      approach_target_x: 0.52
+      walk_duration: 4.2
+      walk_speed: 0.23
+      target_y: 0.0249
+      reach_x: 0.52
+      reach_z: 0.055
+      base_target_map:
+      - 0.94
+      - 0.0162
+      - 0.0
+      hand: right
+      radius: 0.045
+      height: 0.11
+    properties:
+      molmospaces_episode_index: 0
+      molmospaces_scene_key: holodeck-objaverse_house_1194
+      molmospaces_object_id: cup_b31afea732a344b3a47a266ce9bb531f_1_0_0
+      language: Pick up the green glossy cup with spherical base
+    affordances:
+    - name: side_grasp
+      score: 0.92
+      source: molmospaces
+      params:
+        hand: right
+        radius: 0.045
+        height: 0.11
+        contact_model: side_finger_wrap
+        reach_z: 0.02
+  - object_id: ms_ep0000_cup_pick_support
+    category: counter
+    shape:
+      kind: box
+      size:
+      - 1.44
+      - 0.68
+      - 0.86
+    pose_map:
+      frame_id: map
+      position:
+      - 1.46
+      - 0.0249
+      - 0.43
+  relations:
+  - subject: ms_ep0000_cup_pick_object
+    relation: 'on'
+    object: ms_ep0000_cup_pick_support
+    confidence: 1.0
+  request:
+    task: pick
+    object: ms_ep0000_cup_pick_object
+  expect:
+    steps:
+    - navigate.approach_object
+    - manip.align_workspace
+    - manip.side_grasp
+    - manip.lift_object
+    demo_kind: ball
+    grasp_affordance: side_grasp
+    missing_skills: []
+    unready_count: 0
+    contract_error_count: 0
+    decision_status: ready_to_execute
+- id: ms_ep0001_cloth_pick
+  description: Pick up the soft light green small cloth
+  scene: gear_sonic/data/robot_model/model_data/g1/scene_ms_ep0001_cloth_pick.xml
+  tags:
+  - molmospaces
+  - pick
+  - top_grasp
+  - cloth
+  metadata:
+    source: molmospaces_robocasa_generator
+    molmospaces_episode_index: 1
+    molmospaces_episode_id: holodeck-objaverse_house_1603_traj_0
+    molmospaces_scene_key: holodeck-objaverse_house_1603
+    molmospaces_task_kind: pick
+    scene_template: robocasa_galley
+    generated_scene_xml: gear_sonic/data/robot_model/model_data/g1/scene_ms_ep0001_cloth_pick.xml
+  objects:
+  - object_id: ms_ep0001_cloth_pick_object
+    category: cloth
+    shape:
+      kind: box
+      size:
+      - 0.12
+      - 0.1
+      - 0.018
+    pose_map:
+      frame_id: map
+      position:
+      - 1.54
+      - -0.26
+      - 0.789
+    pose_base:
+      frame_id: base_link
+      position:
+      - 0.5
+      - -0.26
+      - 0.009
+    pose_camera:
+      frame_id: camera_depth_optical_frame
+      position:
+      - 0.18
+      - 0.065
+      - 0.62
+    support: ms_ep0001_cloth_pick_support
+    grasp:
+      approach_target_x: 0.5
+      walk_duration: 4.2
+      walk_speed: 0.23
+      target_y: -0.26
+      reach_x: 0.5
+      reach_z: 0.025
+      base_target_map:
+      - 1.04
+      - -0.169
+      - 0.0
+      hand: right
+      aperture: 0.1
+    properties:
+      molmospaces_episode_index: 1
+      molmospaces_scene_key: holodeck-objaverse_house_1603
+      molmospaces_object_id: fabric_2740cc3b02dd268abdb31cf087306e0d_1_0_0
+      language: Pick up the soft light green small cloth
+    affordances:
+    - name: top_grasp
+      score: 0.9
+      source: molmospaces
+      params:
+        hand: right
+        aperture: 0.055
+        contact_model: top_pinch
+        reach_z: 0.035
+  - object_id: ms_ep0001_cloth_pick_support
+    category: table
+    shape:
+      kind: box
+      size:
+      - 1.52
+      - 0.76
+      - 0.78
+    pose_map:
+      frame_id: map
+      position:
+      - 1.54
+      - -0.26
+      - 0.39
+  relations:
+  - subject: ms_ep0001_cloth_pick_object
+    relation: 'on'
+    object: ms_ep0001_cloth_pick_support
+    confidence: 1.0
+  request:
+    task: pick
+    object: ms_ep0001_cloth_pick_object
+  expect:
+    steps:
+    - navigate.approach_object
+    - manip.align_workspace
+    - manip.top_grasp
+    - manip.lift_object
+    demo_kind: ball
+    grasp_affordance: top_grasp
+    missing_skills: []
+    unready_count: 0
+    contract_error_count: 0
+    decision_status: ready_to_execute
+- id: ms_ep0002_knife_pick
+  description: Pick up the knife
+  scene: gear_sonic/data/robot_model/model_data/g1/scene_ms_ep0002_knife_pick.xml
+  tags:
+  - molmospaces
+  - pick
+  - top_grasp
+  - knife
+  metadata:
+    source: molmospaces_robocasa_generator
+    molmospaces_episode_index: 2
+    molmospaces_episode_id: holodeck-objaverse_house_2853_traj_1
+    molmospaces_scene_key: holodeck-objaverse_house_2853
+    molmospaces_task_kind: pick
+    scene_template: robocasa_apartment
+    generated_scene_xml: gear_sonic/data/robot_model/model_data/g1/scene_ms_ep0002_knife_pick.xml
+  objects:
+  - object_id: ms_ep0002_knife_pick_object
+    category: knife
+    shape:
+      kind: box
+      size:
+      - 0.16
+      - 0.025
+      - 0.018
+    pose_map:
+      frame_id: map
+      position:
+      - 1.62
+      - 0.228
+      - 0.789
+    pose_base:
+      frame_id: base_link
+      position:
+      - 0.5
+      - 0.228
+      - 0.009
+    pose_camera:
+      frame_id: camera_depth_optical_frame
+      position:
+      - 0.18
+      - -0.057
+      - 0.62
+    support: ms_ep0002_knife_pick_support
+    grasp:
+      approach_target_x: 0.5
+      walk_duration: 4.2
+      walk_speed: 0.23
+      target_y: 0.228
+      reach_x: 0.5
+      reach_z: 0.025
+      base_target_map:
+      - 1.12
+      - 0.1482
+      - 0.0
+      hand: right
+      aperture: 0.04
+    properties:
+      molmospaces_episode_index: 2
+      molmospaces_scene_key: holodeck-objaverse_house_2853
+      molmospaces_object_id: knife_0bc93f198121d33ac4030a34bfc944a4_7_0_0
+      language: Pick up the knife
+    affordances:
+    - name: top_grasp
+      score: 0.9
+      source: molmospaces
+      params:
+        hand: right
+        aperture: 0.055
+        contact_model: top_pinch
+        reach_z: 0.035
+  - object_id: ms_ep0002_knife_pick_support
+    category: table
+    shape:
+      kind: box
+      size:
+      - 1.52
+      - 0.76
+      - 0.78
+    pose_map:
+      frame_id: map
+      position:
+      - 1.62
+      - 0.228
+      - 0.39
+  relations:
+  - subject: ms_ep0002_knife_pick_object
+    relation: 'on'
+    object: ms_ep0002_knife_pick_support
+    confidence: 1.0
+  request:
+    task: pick
+    object: ms_ep0002_knife_pick_object
+  expect:
+    steps:
+    - navigate.approach_object
+    - manip.align_workspace
+    - manip.top_grasp
+    - manip.lift_object
+    demo_kind: ball
+    grasp_affordance: top_grasp
+    missing_skills: []
+    unready_count: 0
+    contract_error_count: 0
+    decision_status: ready_to_execute
+- id: ms_ep0003_green_pick
+  description: Pick up the green led control board
+  scene: gear_sonic/data/robot_model/model_data/g1/scene_ms_ep0003_green_pick.xml
+  tags:
+  - molmospaces
+  - pick
+  - single_hand_pinch
+  - green
+  metadata:
+    source: molmospaces_robocasa_generator
+    molmospaces_episode_index: 3
+    molmospaces_episode_id: holodeck-objaverse_house_3491_traj_2
+    molmospaces_scene_key: holodeck-objaverse_house_3491
+    molmospaces_task_kind: pick
+    scene_template: robocasa_cafe
+    generated_scene_xml: gear_sonic/data/robot_model/model_data/g1/scene_ms_ep0003_green_pick.xml
+  objects:
+  - object_id: ms_ep0003_green_pick_object
+    category: green
+    shape:
+      kind: box
+      size:
+      - 0.08
+      - 0.08
+      - 0.06
+    pose_map:
+      frame_id: map
+      position:
+      - 1.46
+      - -0.0407
+      - 0.81
+    pose_base:
+      frame_id: base_link
+      position:
+      - 0.54
+      - -0.0407
+      - 0.03
+    pose_camera:
+      frame_id: camera_depth_optical_frame
+      position:
+      - 0.18
+      - 0.0102
+      - 0.62
+    support: ms_ep0003_green_pick_support
+    grasp:
+      approach_target_x: 0.54
+      walk_duration: 4.2
+      walk_speed: 0.23
+      target_y: -0.0407
+      reach_x: 0.54
+      reach_z: 0.03
+      base_target_map:
+      - 0.92
+      - -0.0265
+      - 0.0
+      hand: right
+      radius: 0.04
+    properties:
+      molmospaces_episode_index: 3
+      molmospaces_scene_key: holodeck-objaverse_house_3491
+      molmospaces_object_id: obja_a58d14623c75477abfeeba9ec5eb48bd_2_0_0
+      language: Pick up the green led control board
+    affordances:
+    - name: single_hand_pinch
+      score: 0.88
+      source: molmospaces
+      params:
+        hand: right
+        radius: 0.04
+        contact_model: three_finger
+  - object_id: ms_ep0003_green_pick_support
+    category: table
+    shape:
+      kind: box
+      size:
+      - 1.52
+      - 0.76
+      - 0.78
+    pose_map:
+      frame_id: map
+      position:
+      - 1.46
+      - -0.0407
+      - 0.39
+  relations:
+  - subject: ms_ep0003_green_pick_object
+    relation: 'on'
+    object: ms_ep0003_green_pick_support
+    confidence: 1.0
+  request:
+    task: pick
+    object: ms_ep0003_green_pick_object
+  expect:
+    steps:
+    - navigate.approach_object
+    - manip.align_workspace
+    - manip.single_hand_pinch
+    - manip.lift_object
+    demo_kind: ball
+    grasp_affordance: single_hand_pinch
+    missing_skills: []
+    unready_count: 0
+    contract_error_count: 0
+    decision_status: ready_to_execute
+- id: ms_ep0004_cream_pick
+  description: Pick up the cream candle in blue holder
+  scene: gear_sonic/data/robot_model/model_data/g1/scene_ms_ep0004_cream_pick.xml
+  tags:
+  - molmospaces
+  - pick
+  - single_hand_pinch
+  - cream
+  metadata:
+    source: molmospaces_robocasa_generator
+    molmospaces_episode_index: 4
+    molmospaces_episode_id: holodeck-objaverse_house_3681_traj_2
+    molmospaces_scene_key: holodeck-objaverse_house_3681
+    molmospaces_task_kind: pick
+    scene_template: robocasa_kitchen
+    generated_scene_xml: gear_sonic/data/robot_model/model_data/g1/scene_ms_ep0004_cream_pick.xml
+  objects:
+  - object_id: ms_ep0004_cream_pick_object
+    category: cream
+    shape:
+      kind: box
+      size:
+      - 0.08
+      - 0.08
+      - 0.06
+    pose_map:
+      frame_id: map
+      position:
+      - 1.54
+      - 0.0956
+      - 0.81
+    pose_base:
+      frame_id: base_link
+      position:
+      - 0.54
+      - 0.0956
+      - 0.03
+    pose_camera:
+      frame_id: camera_depth_optical_frame
+      position:
+      - 0.18
+      - -0.0239
+      - 0.62
+    support: ms_ep0004_cream_pick_support
+    grasp:
+      approach_target_x: 0.54
+      walk_duration: 4.2
+      walk_speed: 0.23
+      target_y: 0.0956
+      reach_x: 0.54
+      reach_z: 0.03
+      base_target_map:
+      - 1.0
+      - 0.0622
+      - 0.0
+      hand: right
+      radius: 0.04
+    properties:
+      molmospaces_episode_index: 4
+      molmospaces_scene_key: holodeck-objaverse_house_3681
+      molmospaces_object_id: candle_fe12fa900f50b1f2dcab659cebcf492b_1_0_0
+      language: Pick up the cream candle in blue holder
+    affordances:
+    - name: single_hand_pinch
+      score: 0.88
+      source: molmospaces
+      params:
+        hand: right
+        radius: 0.04
+        contact_model: three_finger
+  - object_id: ms_ep0004_cream_pick_support
+    category: table
+    shape:
+      kind: box
+      size:
+      - 1.52
+      - 0.76
+      - 0.78
+    pose_map:
+      frame_id: map
+      position:
+      - 1.54
+      - 0.0956
+      - 0.39
+  relations:
+  - subject: ms_ep0004_cream_pick_object
+    relation: 'on'
+    object: ms_ep0004_cream_pick_support
+    confidence: 1.0
+  request:
+    task: pick
+    object: ms_ep0004_cream_pick_object
+  expect:
+    steps:
+    - navigate.approach_object
+    - manip.align_workspace
+    - manip.single_hand_pinch
+    - manip.lift_object
+    demo_kind: ball
+    grasp_affordance: single_hand_pinch
+    missing_skills: []
+    unready_count: 0
+    contract_error_count: 0
+    decision_status: ready_to_execute
+- id: ms_ep0005_bronze_pick
+  description: Pick up the bronze full-figured statue
+  scene: gear_sonic/data/robot_model/model_data/g1/scene_ms_ep0005_bronze_pick.xml
+  tags:
+  - molmospaces
+  - pick
+  - single_hand_pinch
+  - bronze
+  metadata:
+    source: molmospaces_robocasa_generator
+    molmospaces_episode_index: 5
+    molmospaces_episode_id: holodeck-objaverse_house_4558_traj_1
+    molmospaces_scene_key: holodeck-objaverse_house_4558
+    molmospaces_task_kind: pick
+    scene_template: robocasa_galley
+    generated_scene_xml: gear_sonic/data/robot_model/model_data/g1/scene_ms_ep0005_bronze_pick.xml
+  objects:
+  - object_id: ms_ep0005_bronze_pick_object
+    category: bronze
+    shape:
+      kind: box
+      size:
+      - 0.08
+      - 0.08
+      - 0.06
+    pose_map:
+      frame_id: map
+      position:
+      - 1.62
+      - 0.1687
+      - 0.81
+    pose_base:
+      frame_id: base_link
+      position:
+      - 0.54
+      - 0.1687
+      - 0.03
+    pose_camera:
+      frame_id: camera_depth_optical_frame
+      position:
+      - 0.18
+      - -0.0422
+      - 0.62
+    support: ms_ep0005_bronze_pick_support
+    grasp:
+      approach_target_x: 0.54
+      walk_duration: 4.2
+      walk_speed: 0.23
+      target_y: 0.1687
+      reach_x: 0.54
+      reach_z: 0.03
+      base_target_map:
+      - 1.08
+      - 0.1096
+      - 0.0
+      hand: right
+      radius: 0.04
+    properties:
+      molmospaces_episode_index: 5
+      molmospaces_scene_key: holodeck-objaverse_house_4558
+      molmospaces_object_id: statue_c1ca41050692ad4a2d2e80d2a1b1ad5f_1_0_0
+      language: Pick up the bronze full-figured statue
+    affordances:
+    - name: single_hand_pinch
+      score: 0.88
+      source: molmospaces
+      params:
+        hand: right
+        radius: 0.04
+        contact_model: three_finger
+  - object_id: ms_ep0005_bronze_pick_support
+    category: table
+    shape:
+      kind: box
+      size:
+      - 1.52
+      - 0.76
+      - 0.78
+    pose_map:
+      frame_id: map
+      position:
+      - 1.62
+      - 0.1687
+      - 0.39
+  relations:
+  - subject: ms_ep0005_bronze_pick_object
+    relation: 'on'
+    object: ms_ep0005_bronze_pick_support
+    confidence: 1.0
+  request:
+    task: pick
+    object: ms_ep0005_bronze_pick_object
+  expect:
+    steps:
+    - navigate.approach_object
+    - manip.align_workspace
+    - manip.single_hand_pinch
+    - manip.lift_object
+    demo_kind: ball
+    grasp_affordance: single_hand_pinch
+    missing_skills: []
+    unready_count: 0
+    contract_error_count: 0
+    decision_status: ready_to_execute
+- id: ms_ep0006_bottle_pick
+  description: Pick up the turquoise spray bottle with nozzle
+  scene: gear_sonic/data/robot_model/model_data/g1/scene_ms_ep0006_bottle_pick.xml
+  tags:
+  - molmospaces
+  - pick
+  - side_grasp
+  - bottle
+  metadata:
+    source: molmospaces_robocasa_generator
+    molmospaces_episode_index: 6
+    molmospaces_episode_id: holodeck-objaverse_house_4587_traj_0
+    molmospaces_scene_key: holodeck-objaverse_house_4587
+    molmospaces_task_kind: pick
+    scene_template: robocasa_kitchen
+    generated_scene_xml: gear_sonic/data/robot_model/model_data/g1/scene_ms_ep0006_bottle_pick.xml
+  objects:
+  - object_id: ms_ep0006_bottle_pick_object
+    category: bottle
+    shape:
+      kind: cylinder
+      radius: 0.035
+      size:
+      - 0.07
+      - 0.07
+      - 0.16
+    pose_map:
+      frame_id: map
+      position:
+      - 1.46
+      - 0.1941
+      - 0.94
+    pose_base:
+      frame_id: base_link
+      position:
+      - 0.52
+      - 0.1941
+      - 0.08
+    pose_camera:
+      frame_id: camera_depth_optical_frame
+      position:
+      - 0.18
+      - -0.0485
+      - 0.62
+    support: ms_ep0006_bottle_pick_support
+    grasp:
+      approach_target_x: 0.52
+      walk_duration: 4.2
+      walk_speed: 0.23
+      target_y: 0.1941
+      reach_x: 0.52
+      reach_z: 0.08
+      base_target_map:
+      - 0.94
+      - 0.1262
+      - 0.0
+      hand: right
+      radius: 0.035
+      height: 0.16
+    properties:
+      molmospaces_episode_index: 6
+      molmospaces_scene_key: holodeck-objaverse_house_4587
+      molmospaces_object_id: atomizer_c60254aae031ecd4e316a5add61459a4_1_0_0
+      language: Pick up the turquoise spray bottle with nozzle
+    affordances:
+    - name: side_grasp
+      score: 0.92
+      source: molmospaces
+      params:
+        hand: right
+        radius: 0.035
+        height: 0.16
+        contact_model: side_finger_wrap
+        reach_z: 0.02
+  - object_id: ms_ep0006_bottle_pick_support
+    category: counter
+    shape:
+      kind: box
+      size:
+      - 1.44
+      - 0.68
+      - 0.86
+    pose_map:
+      frame_id: map
+      position:
+      - 1.46
+      - 0.1941
+      - 0.43
+  relations:
+  - subject: ms_ep0006_bottle_pick_object
+    relation: 'on'
+    object: ms_ep0006_bottle_pick_support
+    confidence: 1.0
+  request:
+    task: pick
+    object: ms_ep0006_bottle_pick_object
+  expect:
+    steps:
+    - navigate.approach_object
+    - manip.align_workspace
+    - manip.side_grasp
+    - manip.lift_object
+    demo_kind: ball
+    grasp_affordance: side_grasp
+    missing_skills: []
+    unready_count: 0
+    contract_error_count: 0
+    decision_status: ready_to_execute
+- id: ms_ep0007_bowl_pick
+  description: Pick up the simple matte gray bowl, tapered
+  scene: gear_sonic/data/robot_model/model_data/g1/scene_ms_ep0007_bowl_pick.xml
+  tags:
+  - molmospaces
+  - pick
+  - side_grasp
+  - bowl
+  metadata:
+    source: molmospaces_robocasa_generator
+    molmospaces_episode_index: 7
+    molmospaces_episode_id: holodeck-objaverse_house_5294_traj_4
+    molmospaces_scene_key: holodeck-objaverse_house_5294
+    molmospaces_task_kind: pick
+    scene_template: robocasa_cafe
+    generated_scene_xml: gear_sonic/data/robot_model/model_data/g1/scene_ms_ep0007_bowl_pick.xml
+  objects:
+  - object_id: ms_ep0007_bowl_pick_object
+    category: bowl
+    shape:
+      kind: cylinder
+      radius: 0.07
+      size:
+      - 0.14
+      - 0.14
+      - 0.045
+    pose_map:
+      frame_id: map
+      position:
+      - 1.54
+      - 0.1737
+      - 0.8025
+    pose_base:
+      frame_id: base_link
+      position:
+      - 0.52
+      - 0.1737
+      - 0.0225
+    pose_camera:
+      frame_id: camera_depth_optical_frame
+      position:
+      - 0.18
+      - -0.0434
+      - 0.62
+    support: ms_ep0007_bowl_pick_support
+    grasp:
+      approach_target_x: 0.52
+      walk_duration: 4.2
+      walk_speed: 0.23
+      target_y: 0.1737
+      reach_x: 0.52
+      reach_z: 0.025
+      base_target_map:
+      - 1.02
+      - 0.1129
+      - 0.0
+      hand: right
+      radius: 0.07
+      height: 0.045
+    properties:
+      molmospaces_episode_index: 7
+      molmospaces_scene_key: holodeck-objaverse_house_5294
+      molmospaces_object_id: bowl_a70c212be8d112d896f7248185b2d76f_1_0_0
+      language: Pick up the simple matte gray bowl, tapered
+    affordances:
+    - name: side_grasp
+      score: 0.92
+      source: molmospaces
+      params:
+        hand: right
+        radius: 0.07
+        height: 0.045
+        contact_model: side_finger_wrap
+        reach_z: 0.02
+  - object_id: ms_ep0007_bowl_pick_support
+    category: table
+    shape:
+      kind: box
+      size:
+      - 1.52
+      - 0.76
+      - 0.78
+    pose_map:
+      frame_id: map
+      position:
+      - 1.54
+      - 0.1737
+      - 0.39
+  relations:
+  - subject: ms_ep0007_bowl_pick_object
+    relation: 'on'
+    object: ms_ep0007_bowl_pick_support
+    confidence: 1.0
+  request:
+    task: pick
+    object: ms_ep0007_bowl_pick_object
+  expect:
+    steps:
+    - navigate.approach_object
+    - manip.align_workspace
+    - manip.side_grasp
+    - manip.lift_object
+    demo_kind: ball
+    grasp_affordance: side_grasp
+    missing_skills: []
+    unready_count: 0
+    contract_error_count: 0
+    decision_status: ready_to_execute

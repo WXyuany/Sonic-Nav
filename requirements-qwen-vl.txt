@@ -1,0 +1,11 @@
+# Local Qwen2.5-VL OpenAI-compatible shadow-inference service.
+# Install in .venv_qwen_vl with the CUDA-enabled PyTorch build appropriate for the host.
+transformers>=4.49,<5
+accelerate
+fastapi
+uvicorn[standard]
+pillow
+huggingface_hub>=0.30
+qwen-vl-utils
+torchvision
+pysocks

@@ -1,0 +1,142 @@
+{
+  "name": "generic_tabletop_vlm",
+  "metadata": {
+    "purpose": "Generic VLM-style object anchors without box_* or ball_* fields."
+  },
+  "anchors": [
+    {
+      "scene": "generic_tabletop",
+      "source": "scenario",
+      "frame_id": "map",
+      "objects": [
+        {
+          "object_id": "red_fruit",
+          "category": "fruit",
+          "shape": {
+            "kind": "sphere",
+            "radius": 0.04
+          },
+          "pose_map": {
+            "frame_id": "map",
+            "position": [1.5, -0.22, 0.84]
+          },
+          "pose_base": {
+            "frame_id": "base_link",
+            "position": [0.5, -0.22, 0.03]
+          },
+          "pose_camera": {
+            "frame_id": "camera_depth_optical_frame",
+            "position": [0.16, 0.04, 0.62]
+          },
+          "support": "table",
+          "grasp": {
+            "approach_target_x": 0.54,
+            "walk_duration": 4.2,
+            "walk_speed": 0.23,
+            "target_y": -0.22,
+            "reach_x": 0.5,
+            "reach_z": 0.03,
+            "base_target_map": [1.0, -0.16, 0.0]
+          }
+        },
+        {
+          "object_id": "right_tray",
+          "category": "place_target",
+          "shape": "target",
+          "pose_map": {
+            "frame_id": "map",
+            "position": [1.5, 0.1, 0.84]
+          },
+          "pose_base": {
+            "frame_id": "base_link",
+            "position": [0.5, 0.08, 0.03]
+          },
+          "support": "table"
+        },
+        {
+          "object_id": "small_package",
+          "category": "package",
+          "shape": {
+            "kind": "box",
+            "size": [0.16, 0.1, 0.12]
+          },
+          "pose_map": {
+            "frame_id": "map",
+            "position": [1.58, 0.2, 0.84]
+          },
+          "pose_base": {
+            "frame_id": "base_link",
+            "position": [0.54, 0.18, 0.04]
+          },
+          "support": "table",
+          "grasp": {
+            "approach_target_x": 0.52,
+            "walk_duration": 4.0,
+            "walk_speed": 0.22,
+            "reach_x": 0.5,
+            "open_y": 0.2,
+            "clamp_y": 0.1,
+            "reach_z": 0.04,
+            "lift_z": 0.12,
+            "base_target_map": [1.08, 0.14, 0.0]
+          }
+        }
+      ],
+      "relations": [
+        {
+          "subject": "red_fruit",
+          "relation": "left_of",
+          "object": "right_tray",
+          "confidence": 0.9
+        }
+      ]
+    }
+  ],
+  "expected_objects": ["red_fruit", "right_tray", "small_package"],
+  "tasks": [
+    {
+      "name": "vlm_move_fruit_by_category",
+      "request": {
+        "task": "move",
+        "category": "fruit",
+        "target": "right_tray",
+        "id": "vlm-move-fruit"
+      },
+      "expect": {
+        "steps": [
+          "navigate.approach_object",
+          "manip.align_workspace",
+          "manip.single_hand_pinch",
+          "manip.lift_object",
+          "manip.transport_object",
+          "manip.place_object",
+          "manip.release"
+        ],
+        "demo_kind": "ball",
+        "grasp_affordance": "single_hand_pinch",
+        "missing_skills": [],
+        "unready_count": 0
+      }
+    },
+    {
+      "name": "vlm_pick_package_by_id",
+      "request": {
+        "task": "pick",
+        "object": "small_package",
+        "id": "vlm-pick-package"
+      },
+      "expect": {
+        "steps": [
+          "navigate.approach_object",
+          "manip.align_workspace",
+          "manip.bimanual_clamp",
+          "manip.lift_object"
+        ],
+        "demo_kind": "box",
+        "grasp_affordance": "bimanual_clamp",
+        "missing_skills": [],
+        "unready_count": 0
+      }
+    }
+  ]
+}

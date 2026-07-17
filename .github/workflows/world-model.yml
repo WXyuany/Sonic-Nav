@@ -1,0 +1,35 @@
+name: World Model CI
+
+on:
+  pull_request:
+    paths:
+      - "scripts/sonic_world/**"
+      - "scripts/tools/world_model_*.py"
+      - "scripts/tools/task_*policy*.py"
+      - "configs/world_model/**"
+      - "Makefile"
+      - ".github/workflows/world-model.yml"
+  push:
+    branches: [main, gear-sonic]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - name: Install validation dependencies
+        run: python -m pip install numpy pyyaml mujoco
+      - name: Run world-model gate
+        run: >-
+          python scripts/tools/world_model_ci_check.py
+          --python python
+          --require-headless-probe
+          --skip-ros-smoke
+          --output /tmp/sonic_world_ci.json

@@ -1,0 +1,57 @@
+{
+  "name": "tabletop_box_pick",
+  "metadata": {
+    "purpose": "Table-top box anchor converted into bimanual clamp skills."
+  },
+  "anchors": [
+    {
+      "scene": "box_demo",
+      "box_name": "demo_box",
+      "source": "scenario",
+      "frame_id": "map",
+      "box_center_map": [1.6, 0.0, 0.84],
+      "box_size": [0.18, 0.12, 0.14],
+      "box_point_base": [0.52, 0.0, 0.04],
+      "box_point_camera_depth": [0.1, 0.05, 0.6],
+      "grasp": {
+        "approach_target_x": 0.5,
+        "walk_duration": 4.0,
+        "walk_speed": 0.22,
+        "reach_x": 0.48,
+        "open_y": 0.22,
+        "clamp_y": 0.1,
+        "reach_z": 0.04,
+        "lift_z": 0.12,
+        "base_target_map": [1.1, 0.0, 0.0]
+      }
+    }
+  ],
+  "expected_objects": ["demo_box"],
+  "tasks": [
+    {
+      "name": "pick_demo_box",
+      "request": {
+        "task": "pick",
+        "object": "demo_box"
+      },
+      "expect": {
+        "steps": [
+          "navigate.approach_object",
+          "manip.align_workspace",
+          "manip.bimanual_clamp",
+          "manip.lift_object"
+        ],
+        "handlers": [
+          "demo_locomotion_phase_runtime",
+          "workspace_alignment_primitive",
+          "contact_grasp_primitive",
+          "lift_stability_primitive"
+        ],
+        "demo_kind": "box",
+        "grasp_affordance": "bimanual_clamp",
+        "missing_skills": [],
+        "unready_count": 0
+      }
+    }
+  ]
+}
